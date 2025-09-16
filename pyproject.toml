@@ -1,0 +1,26 @@
+[tool.poetry]
+name = "market-project"
+version = "0.1"
+description = ""
+authors = ["Георгий <nazimov03@list.ru>"]
+readme = "README.md"
+
+[tool.poetry.dependencies]
+python = "^3.12"
+fastapi = "^0.116.1"
+sqlalchemy = "^2.0.43"
+alembic = "^1.16.5"
+uvicorn = "^0.35.0"
+asyncpg = "^0.30.0"
+pydantic-settings = "^2.10.1"
+passlib = "^1.7.4"
+authlib = "^1.6.3"
+itsdangerous = "^2.2.0"
+flask = "^3.1.2"
+flask-admin = "^1.6.1"
+pylint = "^3.3.8"
+
+
+[build-system]
+requires = ["poetry-core"]
+build-backend = "poetry.core.masonry.api"
