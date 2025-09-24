@@ -15,7 +15,6 @@ class Settings(BaseSettings):
 
     model_config = SettingsConfigDict(env_file=".env", extra="ignore")
 
-
     @property
     def database_settings(self) -> dict:
         """
@@ -37,7 +36,7 @@ class Settings(BaseSettings):
         return "postgresql+asyncpg://{user}:{password}@{host}:{port}/{database}".format(
             **self.database_settings,
         )
-    
+
     @property
     def sync_database_uri(self) -> str:
         """

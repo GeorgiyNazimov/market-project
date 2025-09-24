@@ -5,7 +5,6 @@ from app.config import Settings, get_settings
 from app.api import list_of_routers
 
 
-
 def bind_routes(application: FastAPI, setting: Settings) -> None:
     for router in list_of_routers:
         application.include_router(router, prefix=setting.PATH_PREFIX)
@@ -26,6 +25,7 @@ def get_app() -> FastAPI:
     bind_routes(application, settings)
     application.state.settings = settings
     return application
+
 
 app = get_app()
 
