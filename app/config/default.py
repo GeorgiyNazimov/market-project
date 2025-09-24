@@ -37,6 +37,15 @@ class Settings(BaseSettings):
         return "postgresql+asyncpg://{user}:{password}@{host}:{port}/{database}".format(
             **self.database_settings,
         )
+    
+    @property
+    def sync_database_uri(self) -> str:
+        """
+        Get async uri for revision in alembic.
+        """
+        return "postgresql://{user}:{password}@{host}:{port}/{database}".format(
+            **self.database_settings,
+        )
 
 
 @lru_cache()

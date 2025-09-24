@@ -1,5 +1,5 @@
 from sqlalchemy import MetaData
-from sqlalchemy.orm import declarative_base
+from sqlalchemy.orm import DeclarativeBase
 
 
 convention = {
@@ -14,4 +14,6 @@ convention = {
 }
 
 metadata = MetaData(naming_convention=convention)
-Base = declarative_base(metadata=metadata)
+
+class Base(DeclarativeBase):
+    metadata = metadata
