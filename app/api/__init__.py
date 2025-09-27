@@ -1,8 +1,8 @@
-# import routers
+from app.api.auth import app as auth_router
 
 
 list_of_routers = [
-    # router names
+    auth_router,
 ]
 
 __all__ = [
