@@ -1,6 +1,9 @@
 services:
   backend:
-    build: .
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: backend
     restart: always
     env_file: ".env"
     depends_on:
@@ -8,7 +11,7 @@ services:
         condition: service_healthy
     ports:
       - "8000:8000"
-      
+
 
   postgres:
     container_name: ${POSTGRES_HOST}
@@ -19,8 +22,7 @@ services:
     ports:
       - "${POSTGRES_PORT}:${POSTGRES_PORT}"
     healthcheck:
-      test:
-        ["CMD", "pg_isready", "-U", "${POSTGRES_USER}", "-d", "${POSTGRES_DB}"]
+      test: ["CMD", "pg_isready", "-U", "${POSTGRES_USER}", "-d", "${POSTGRES_DB}"]
       interval: 10s
       timeout: 5s
       retries: 5
@@ -28,6 +30,21 @@ services:
       start_interval: 3s
     volumes:
       - pgdata:/var/lib/postgresql/data
+
+  locust:
+    build:
+      context: .
+      dockerfile: Dockerfile.locust
+    container_name: locust
+    env_file: ".env"
+    command: poetry run locust -f locustfile.py --host http://backend:8000
+    ports:
+      - "8089:8089"
+    depends_on:
+      backend:
+        condition: service_started
+    profiles:
+      - locust
 
 volumes:
   pgdata:
