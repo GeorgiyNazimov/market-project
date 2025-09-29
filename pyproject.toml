@@ -22,11 +22,13 @@ pylint = "^3.3.8"
 psycopg2-binary = "^2.9.10"
 python-jose = {extras = ["cryptography"], version = "^3.5.0"}
 python-multipart = "^0.0.20"
+gunicorn = "^23.0.0"
 
 
 [tool.poetry.group.dev.dependencies]
 black = "^25.9.0"
 pylint = "^3.3.8"
+locust = "^2.41.2"
 
 [build-system]
 requires = ["poetry-core"]
