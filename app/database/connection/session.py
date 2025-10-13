@@ -10,10 +10,10 @@ settings = get_settings()
 
 engine = create_async_engine(
     settings.database_uri,
-    echo=True,
+    echo=False,
     future=True,
-    pool_size=10,
-    max_overflow=0,
+    pool_size=20,
+    max_overflow=5,
 )
 
 async_session_maker = sessionmaker(engine, class_=AsyncSession, expire_on_commit=False)
