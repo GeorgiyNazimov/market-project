@@ -14,13 +14,13 @@ class ShortProductData(BaseModel):
 
     model_config = ConfigDict(from_attributes=True)
 
-class NextCursorInfo(BaseModel):
+class NextCursorData(BaseModel):
     created_at: datetime
     id: UUID
 
 class ShortProductDataList(BaseModel):
     product_list: List[ShortProductData]
-    next_cursor: NextCursorInfo
+    next_cursor: NextCursorData
 
 class ProductData(BaseModel):
     id: UUID
@@ -33,7 +33,7 @@ class ProductData(BaseModel):
     model_config = ConfigDict(from_attributes=True)
 
 #тестовая схема для добавления новых товаров в бд
-class ProductInfo(BaseModel):
+class NewProductData(BaseModel):
     name: str
     price: float
     stock: int
