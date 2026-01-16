@@ -5,6 +5,7 @@ from .order_item import OrderItem
 from .order import Order
 from .product import Product
 from .user import User
+from .review import Review
 
 __all__ = [
     "Cart",
@@ -14,4 +15,5 @@ __all__ = [
     "Order",
     "Product",
     "User",
+    "Review",
 ]
