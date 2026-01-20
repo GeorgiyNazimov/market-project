@@ -21,8 +21,7 @@ async def create_product_review_db(
             text=reviewData.text,
             product_rating=reviewData.product_rating,
             product_id=product_id,
-            user_id=current_user.id,
-            agregated=True
+            user_id=current_user.id
         )
         session.add(new_review)
         rating = new_review.product_rating
