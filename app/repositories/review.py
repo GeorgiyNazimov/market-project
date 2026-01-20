@@ -1,10 +1,12 @@
 from datetime import datetime
 from uuid import UUID
 from sqlalchemy import select, tuple_
+from sqlalchemy.dialects.postgresql import insert
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.database.models.review import Review
 from app.database.models.user import User
+from app.database.models.product_avg_rating import ProductAverageRating
 from app.schemas.review import NewReviewData
 
 
@@ -15,8 +17,48 @@ async def create_product_review_db(
     session: AsyncSession
 ):
     try:
-        new_review = Review(text=reviewData.text, product_rating=reviewData.product_rating, product_id=product_id, user_id=current_user.id)
+        new_review = Review(
+            text=reviewData.text,
+            product_rating=reviewData.product_rating,
+            product_id=product_id,
+            user_id=current_user.id,
+            agregated=True
+        )
         session.add(new_review)
+        rating = new_review.product_rating
+        stmt = insert(ProductAverageRating).values(
+            product_id=product_id,
+            rating_1_count = 1 if rating == 1 else 0,
+            rating_2_count = 1 if rating == 2 else 0,
+            rating_3_count = 1 if rating == 3 else 0,
+            rating_4_count = 1 if rating == 4 else 0,
+            rating_5_count = 1 if rating == 5 else 0,
+            rating_count = 1,
+            avg_rating = rating
+        ).on_conflict_do_update(
+            index_elements=[ProductAverageRating.product_id],
+            set_={
+                "rating_1_count":
+                    ProductAverageRating.rating_1_count + int(rating == 1),
+                "rating_2_count":
+                    ProductAverageRating.rating_2_count + int(rating == 2),
+                "rating_3_count":
+                    ProductAverageRating.rating_3_count + int(rating == 3),
+                "rating_4_count":
+                    ProductAverageRating.rating_4_count + int(rating == 4),
+                "rating_5_count":
+                    ProductAverageRating.rating_5_count + int(rating == 5),
+                "rating_count":
+                    ProductAverageRating.rating_count + 1,
+                "avg_rating":
+                    (
+                        (ProductAverageRating.avg_rating * ProductAverageRating.rating_count + rating)
+                        / (ProductAverageRating.rating_count + 1)
+                    ),
+            },
+        )
+
+        await session.execute(stmt)
         await session.commit()
     except:
         await session.rollback()

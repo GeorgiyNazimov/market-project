@@ -11,6 +11,8 @@ class ShortProductData(BaseModel):
     stock: int
     category_id: UUID | None
     created_at: datetime
+    avg_rating: float
+    rating_count: int
 
     model_config = ConfigDict(from_attributes=True)
 
@@ -27,6 +29,8 @@ class ProductData(BaseModel):
     name: str
     price: float
     stock: int
+    avg_rating: float
+    rating_count: int
     description: str | None
     category_id: UUID | None
 

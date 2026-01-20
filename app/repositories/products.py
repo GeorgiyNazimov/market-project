@@ -5,6 +5,7 @@ from fastapi import HTTPException, status
 from sqlalchemy import func, select, tuple_
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.exc import IntegrityError
+from sqlalchemy.orm import joinedload
 
 from app.database.models.cart_item import CartItem
 from app.database.models.product import Product
@@ -13,7 +14,7 @@ from app.repositories.cart import get_cart
 from app.schemas.products import NewProductData
 
 async def get_product_list_from_db(created_at_cursor: datetime | None, id_cursor: UUID | None, limit: int, session: AsyncSession):
-    stmt = select(Product)
+    stmt = select(Product).options(joinedload(Product.product_rating))
 
     if created_at_cursor and id_cursor:
         # Запрос новой партии информации о товарах
@@ -36,7 +37,7 @@ async def get_product_list_from_db(created_at_cursor: datetime | None, id_cursor
     return results, next_cursor
 
 async def get_product_data_from_db(product_id: UUID, session: AsyncSession):
-    product = (await session.execute(select(Product).where(Product.id == product_id))).scalar_one()
+    product = (await session.execute(select(Product).options(joinedload(Product.product_rating)).where(Product.id == product_id))).scalar_one()
     return product
 
 

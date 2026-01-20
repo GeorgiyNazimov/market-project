@@ -6,6 +6,7 @@ from .order import Order
 from .product import Product
 from .user import User
 from .review import Review
+from .product_avg_rating import ProductAverageRating
 
 __all__ = [
     "Cart",
@@ -16,4 +17,5 @@ __all__ = [
     "Product",
     "User",
     "Review",
+    "ProductAverageRating",
 ]
