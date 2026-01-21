@@ -3,7 +3,7 @@ from datetime import datetime
 from decimal import Decimal
 from typing import Optional
 
-from sqlalchemy import UUID, ForeignKey, Index, String, Text, Integer, DateTime, Numeric, desc
+from sqlalchemy import UUID, ForeignKey, Index, String, Text, Integer, DateTime, Numeric, desc, Boolean
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from app.database import Base
