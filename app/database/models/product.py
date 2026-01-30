@@ -3,7 +3,7 @@ from datetime import datetime
 from decimal import Decimal
 from typing import Optional
 
-from sqlalchemy import UUID, ForeignKey, String, Text, Integer, DateTime, Numeric
+from sqlalchemy import UUID, DateTime, ForeignKey, Integer, Numeric, String, Text
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from app.database import Base
@@ -25,7 +25,9 @@ class Product(Base):
     created_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.utcnow)
 
     category: Mapped[Optional["Category"]] = relationship(back_populates="products")
-    product_rating: Mapped[Optional["ProductAverageRating"]] = relationship("ProductAverageRating", uselist=False, lazy="raise")
+    product_rating: Mapped[Optional["ProductAverageRating"]] = relationship(
+        "ProductAverageRating", uselist=False, lazy="raise"
+    )
 
     @property
     def avg_rating(self) -> float:

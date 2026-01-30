@@ -1,5 +1,5 @@
 import uuid
-from typing import Optional, List
+from typing import List, Optional
 
 from sqlalchemy import UUID, ForeignKey, String
 from sqlalchemy.orm import Mapped, mapped_column, relationship

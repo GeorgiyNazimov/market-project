@@ -8,6 +8,7 @@ from tests.factories.products import product_factory
 from tests.factories.reviews import new_review_data_factory
 from tests.factories.users import user_factory
 
+
 @pytest.mark.asyncio
 async def test_create_review(db_session):
     new_product = product_factory()
@@ -16,12 +17,15 @@ async def test_create_review(db_session):
     db_session.add_all([new_user, new_product])
     await db_session.flush()
 
-    await create_product_review_db(new_product.id, new_review_data, new_user, db_session)
+    await create_product_review_db(
+        new_product.id, new_review_data, new_user, db_session
+    )
 
     review = (await db_session.execute(select(Review))).scalar_one()
     assert review.product_id == new_product.id
     assert review.user_id == new_user.id
     assert review.text == new_review_data.text
+
 
 @pytest.mark.asyncio
 async def test_cannot_create_review_for_unknown_product(db_session):
@@ -32,7 +36,9 @@ async def test_cannot_create_review_for_unknown_product(db_session):
     new_review_data = new_review_data_factory()
 
     with pytest.raises(IntegrityError):
-        await create_product_review_db(new_product.id, new_review_data, new_user, db_session)
+        await create_product_review_db(
+            new_product.id, new_review_data, new_user, db_session
+        )
 
 
 @pytest.mark.asyncio
@@ -44,4 +50,6 @@ async def test_cannot_create_review_by_unknown_user(db_session):
     new_review_data = new_review_data_factory()
 
     with pytest.raises(IntegrityError):
-        await create_product_review_db(new_product.id, new_review_data, new_user, db_session)
+        await create_product_review_db(
+            new_product.id, new_review_data, new_user, db_session
+        )

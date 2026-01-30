@@ -1,8 +1,10 @@
+import pytest
 from sqlalchemy import select
+
 from app.database.models.product import Product
 from app.repositories.products import create_product, get_product_data_from_db
 from tests.factories.products import new_product_data_factory, product_factory
-import pytest
+
 
 @pytest.mark.asyncio
 async def test_create_product(db_session):
@@ -14,6 +16,7 @@ async def test_create_product(db_session):
     assert product.name == new_product_data.name
     assert product.price == new_product_data.price
     assert product.stock == new_product_data.stock
+
 
 @pytest.mark.asyncio
 async def test_get_product_data(db_session):

@@ -1,12 +1,12 @@
-from logging.config import fileConfig
 import os
+from logging.config import fileConfig
 
-from sqlalchemy import create_engine, engine_from_config
-from sqlalchemy import pool
+from sqlalchemy import engine_from_config, pool
+
+from alembic import context
+from app.config import get_settings
 from app.database import Base
 from app.database.models import *
-from app.config import get_settings
-from alembic import context
 
 # this is the Alembic Config object, which provides
 # access to the values within the .ini file in use.
@@ -30,6 +30,7 @@ target_metadata = Base.metadata
 env_file = os.environ.get("ENV_FILE", ".env")
 settings = get_settings(env_file=env_file)
 url = settings.sync_database_uri
+
 
 def run_migrations_offline() -> None:
     """Run migrations in 'offline' mode.
@@ -62,13 +63,13 @@ def run_migrations_online() -> None:
 
     """
     url = config.get_main_option("sqlalchemy.url")
-    
+
     if url == "placeholder":
         settings = get_settings(env_file=".env")
         url = settings.sync_database_uri
 
     connectable = engine_from_config(
-        {"sqlalchemy.url":url},
+        {"sqlalchemy.url": url},
         prefix="sqlalchemy.",
         poolclass=pool.NullPool,
     )

@@ -1,8 +1,8 @@
 from fastapi import FastAPI
 from uvicorn import run
 
-from app.config import Settings, get_settings
 from app.api import list_of_routers
+from app.config import Settings, get_settings
 
 
 def bind_routes(application: FastAPI, setting: Settings) -> None:

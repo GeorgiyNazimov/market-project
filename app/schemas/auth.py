@@ -1,10 +1,13 @@
 from datetime import datetime
 from uuid import UUID
+
 from pydantic import BaseModel, ConfigDict
+
 
 class UserCreateData(BaseModel):
     email: str
     password: str
+
 
 class UserGetData(BaseModel):
     id: UUID

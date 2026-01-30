@@ -3,7 +3,7 @@ from collections.abc import AsyncGenerator
 from sqlalchemy.ext.asyncio import AsyncSession, create_async_engine
 from sqlalchemy.orm import sessionmaker
 
-from app.config import get_settings, Settings
+from app.config import Settings, get_settings
 
 
 def get_engine(settings: Settings):
@@ -15,11 +15,14 @@ def get_engine(settings: Settings):
         max_overflow=5,
     )
 
+
 def get_async_session_maker(engine) -> sessionmaker:
     return sessionmaker(engine, class_=AsyncSession, expire_on_commit=False)
 
+
 _engine = None
 _async_session_maker = None
+
 
 def init_db(settings=None):
     global _engine, _async_session_maker
@@ -35,10 +38,11 @@ def init_db(settings=None):
     _engine = get_engine(settings)
     _async_session_maker = get_async_session_maker(_engine)
 
+
 async def get_session() -> AsyncGenerator[AsyncSession, None]:
     if _async_session_maker is None:
         print("Initializing DB without settings!")
         init_db()
-    
+
     async with _async_session_maker() as session:
         yield session
