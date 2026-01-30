@@ -1,6 +1,7 @@
 from logging.config import fileConfig
+import os
 
-from sqlalchemy import engine_from_config
+from sqlalchemy import create_engine, engine_from_config
 from sqlalchemy import pool
 from app.database import Base
 from app.database.models import *
@@ -21,13 +22,14 @@ if config.config_file_name is not None:
 # from myapp import mymodel
 # target_metadata = mymodel.Base.metadata
 target_metadata = Base.metadata
-settings = get_settings()
-config.set_main_option("sqlalchemy.url", settings.sync_database_uri)
 # other values from the config, defined by the needs of env.py,
 # can be acquired:
 # my_important_option = config.get_main_option("my_important_option")
 # ... etc.
 
+env_file = os.environ.get("ENV_FILE", ".env")
+settings = get_settings(env_file=env_file)
+url = settings.sync_database_uri
 
 def run_migrations_offline() -> None:
     """Run migrations in 'offline' mode.
@@ -42,7 +44,7 @@ def run_migrations_offline() -> None:
 
     """
     context.configure(
-        url=settings.database_uri,
+        url=url,
         target_metadata=target_metadata,
         literal_binds=True,
         dialect_opts={"paramstyle": "named"},
@@ -59,8 +61,14 @@ def run_migrations_online() -> None:
     and associate a connection with the context.
 
     """
+    url = config.get_main_option("sqlalchemy.url")
+    
+    if url == "placeholder":
+        settings = get_settings(env_file=".env")
+        url = settings.sync_database_uri
+
     connectable = engine_from_config(
-        config.get_section(config.config_ini_section, {}),
+        {"sqlalchemy.url":url},
         prefix="sqlalchemy.",
         poolclass=pool.NullPool,
     )

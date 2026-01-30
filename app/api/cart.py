@@ -8,7 +8,7 @@ from app.database.models.user import User
 from app.schemas.cart import CartItemList, NewCartItemData, UpdateCartItemData
 from app.schemas.products import ProductData, ShortProductDataList
 from app.services.auth import get_current_user
-from app.services.cart import add_product_in_cart, delete_cart, delete_cart_item, get_all_cart_items, update_cart_item_quatity
+from app.services.cart import add_product_in_cart, delete_cart, delete_cart_item, get_all_cart_items, update_cart_item_quantity
 from app.services.products import get_product_list, get_product_data
 
 app = APIRouter(prefix="/cart", tags=["Cart"])
@@ -22,12 +22,12 @@ async def get_all_cart_items_handler(
     return my_cart_items
 
 @app.patch("/update_cartitem")
-async def update_cart_item_quatity_handler(
+async def update_cart_item_quantity_handler(
     update_cartitem_data: UpdateCartItemData,
     current_user: User = Depends(get_current_user),
     session: AsyncSession = Depends(get_session)
 ):
-    await update_cart_item_quatity(update_cartitem_data, session)
+    await update_cart_item_quantity(update_cartitem_data, session)
     return "Successful update"
 
 @app.post("/create_cartitem/{product_id}")

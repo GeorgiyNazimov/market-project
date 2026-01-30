@@ -53,7 +53,7 @@ async def insert_cart_item(product_id: UUID, current_user: User, session: AsyncS
         )
     return new_cart_item
 
-async def update_cart_item_quatity_in_db(update_cartitem_data: UpdateCartItemData, session: AsyncSession):
+async def update_cart_item_quantity_in_db(update_cartitem_data: UpdateCartItemData, session: AsyncSession):
     cart_item = await session.get(CartItem, update_cartitem_data.cart_item_id)
     cart_item.quantity = update_cartitem_data.new_quantity
     await session.commit()
