@@ -1,12 +1,9 @@
 from datetime import datetime, timedelta
-from types import SimpleNamespace
 
 from freezegun import freeze_time
-from app.services.auth import create_access_token
 from jose import jwt
-import pytest
 
-from tests.factories.users import user_factory
+from app.services.auth import create_access_token
 
 
 @freeze_time("2026-01-01 12:00:00")
@@ -45,4 +42,3 @@ def test_create_access_token_default_expires(monkeypatch, test_settings):
     assert decoded["exp"] == int(
         (datetime.utcnow() + timedelta(minutes=15)).timestamp()
     )
-    

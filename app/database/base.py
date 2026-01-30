@@ -1,7 +1,6 @@
 from sqlalchemy import MetaData
 from sqlalchemy.orm import DeclarativeBase
 
-
 convention = {
     "all_column_names": lambda constraint, table: "_".join(
         [str(column.name) for column in constraint.columns.values()]

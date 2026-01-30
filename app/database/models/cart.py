@@ -2,7 +2,7 @@ import uuid
 from datetime import datetime
 from typing import List
 
-from sqlalchemy import ForeignKey, DateTime, UUID, Integer
+from sqlalchemy import UUID, DateTime, ForeignKey, Integer
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from app.database import Base
@@ -21,4 +21,6 @@ class Cart(Base):
     created_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.utcnow)
 
     user: Mapped["User"] = relationship(back_populates="cart")
-    items: Mapped[List["CartItem"]] = relationship(back_populates="cart", cascade="all, delete-orphan")
+    items: Mapped[List["CartItem"]] = relationship(
+        back_populates="cart", cascade="all, delete-orphan"
+    )

@@ -1,4 +1,5 @@
 from functools import lru_cache
+
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
 
@@ -49,7 +50,6 @@ class Settings(BaseSettings):
         return "postgresql://{user}:{password}@{host}:{port}/{database}".format(
             **self.database_settings,
         )
-
 
 
 @lru_cache()

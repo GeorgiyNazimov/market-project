@@ -34,7 +34,15 @@ freezegun = "^1.5.5"
 black = "^25.9.0"
 pylint = "^3.3.8"
 locust = "^2.41.2"
+isort = "<7"
 
 [build-system]
 requires = ["poetry-core"]
 build-backend = "poetry.core.masonry.api"
+
+[tool.black]
+line-length = 88
+
+[tool.isort]
+profile = "black"
+line_length = 88
