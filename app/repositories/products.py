@@ -31,7 +31,7 @@ async def get_product_list_from_db(created_at_cursor: datetime | None, id_cursor
     if results:
         last = results[-1]
         next_cursor = {
-            "created_at": last.created_at.isoformat(),
+            "created_at": last.created_at,
             "id": str(last.id)
         }
     return results, next_cursor

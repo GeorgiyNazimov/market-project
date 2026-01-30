@@ -95,7 +95,7 @@ async def get_product_reviews_list_db(
     if results:
         last = results[-1]
         next_cursor = {
-            "created_at": last.created_at.isoformat(),
+            "created_at": last.created_at,
             "id": str(last.id)
         }
     
