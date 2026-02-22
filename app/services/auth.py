@@ -1,12 +1,14 @@
 from datetime import datetime, timedelta
 
-from fastapi import Depends, HTTPException, Security, status
+from fastapi import Depends, Security
 from fastapi.security import OAuth2PasswordBearer, OAuth2PasswordRequestForm
 from jose import ExpiredSignatureError, JWTError, jwt
 from passlib.context import CryptContext
+from sqlalchemy.exc import IntegrityError
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.config.default import get_settings
+from app.core.exceptions import AuthenticationError, ConflictError
 from app.database.connection.session import get_session
 from app.database.models.user import User
 from app.repositories.auth import create_user_in_db, get_user_from_db
@@ -37,9 +39,9 @@ async def authenticate_user(
 ) -> User:
     user = await get_user_from_db(authData.username, session)
     if not user:
-        return False  # добавить лог об отсутствии пользователя в базе
+        raise AuthenticationError("Invalid credential")
     if not verify_password(authData.password, user.password_hash):
-        return False  # добавить лог о неверном пароле
+        raise AuthenticationError("Invalid credential")
     return user
 
 
@@ -53,26 +55,18 @@ def create_access_token(data: dict, expires_delta: timedelta = None):
 async def get_current_user(
     token: str = Security(oauth2_scheme), session: AsyncSession = Depends(get_session)
 ) -> User:
-    credentials_exception = HTTPException(
-        status_code=status.HTTP_401_UNAUTHORIZED,
-        detail="Invalid credentials",
-        headers={"WWW-Authenticate": "Bearer"},
-    )
     try:
         payload = jwt.decode(
             token, settings.SECRET_KEY, algorithms=[settings.ALGORITHM]
         )
         email: str = payload.get("sub")
-        if email is None:
-            raise credentials_exception
-    except ExpiredSignatureError:
-        credentials_exception.detail = "Expired token"
-        raise credentials_exception
-    except JWTError:
-        raise credentials_exception
-    user = await get_user_from_db(email, session)
+    except ExpiredSignatureError as e:
+        raise AuthenticationError("Expired token") from e
+    except JWTError as e:
+        raise AuthenticationError("Invalid credential") from e
+    user = await get_user_from_db(email, session) if email else None
     if user is None:
-        raise credentials_exception
+        raise AuthenticationError("Invalid credential")
     return user
 
 
@@ -80,10 +74,8 @@ async def create_user(userData: UserCreateData, session: AsyncSession) -> User:
     try:
         userData.password = get_password_hash(userData.password)
         new_user = await create_user_in_db(userData, session)
-    except:
-        raise HTTPException(
-            status_code=status.HTTP_400_BAD_REQUEST,
-            detail="User already exists",
-        )
-
+        await session.commit()
+    except IntegrityError as e:
+        await session.rollback()
+        raise ConflictError("User already exists") from e
     return new_user

@@ -28,11 +28,3 @@ class Product(Base):
     product_rating: Mapped[Optional["ProductAverageRating"]] = relationship(
         "ProductAverageRating", uselist=False, lazy="raise"
     )
-
-    @property
-    def avg_rating(self) -> float:
-        return self.product_rating.avg_rating if self.product_rating else 0.0
-
-    @property
-    def rating_count(self) -> int:
-        return self.product_rating.rating_count if self.product_rating else 0

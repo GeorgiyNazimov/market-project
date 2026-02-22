@@ -1,9 +1,12 @@
 from datetime import datetime
 from uuid import UUID
 
+from sqlalchemy.exc import IntegrityError
 from sqlalchemy.ext.asyncio import AsyncSession
 
+from app.core.exceptions import ConflictError, NotFoundError
 from app.database.models.user import User
+from app.repositories.products import update_product_average_rating
 from app.repositories.review import (
     create_product_review_db,
     get_product_reviews_list_db,
@@ -17,7 +20,19 @@ async def create_product_review(
     current_user: User,
     session: AsyncSession,
 ):
-    await create_product_review_db(product_id, reviewData, current_user, session)
+    try:
+        await create_product_review_db(product_id, reviewData, current_user, session)
+
+        rating = reviewData.product_rating
+        await update_product_average_rating(product_id, rating, session)
+        await session.commit()
+    except IntegrityError as e:
+        sqlstate = getattr(e.orig, "sqlstate", None)
+        if sqlstate == "23503":  # FK violation
+            raise NotFoundError("User or Product not found") from e
+        if sqlstate == "23505":  # unique violation
+            raise ConflictError("You already wrote review for this product") from e
+        raise
 
 
 async def get_product_reviews_list(

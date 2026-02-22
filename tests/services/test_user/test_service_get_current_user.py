@@ -1,8 +1,8 @@
 from datetime import timedelta
 
 import pytest
-from fastapi import HTTPException
 
+from app.core.exceptions import AuthenticationError
 from app.services.auth import create_access_token, get_current_user
 from tests.factories.users import user_factory
 
@@ -32,7 +32,7 @@ async def test_get_current_user_wrong_token(db_session, monkeypatch, test_settin
     await db_session.flush()
     token = "token"
 
-    with pytest.raises(HTTPException):
+    with pytest.raises(AuthenticationError):
         await get_current_user(token, db_session)
 
 
@@ -47,7 +47,7 @@ async def test_get_current_user_expired_token(db_session, monkeypatch, test_sett
         expires_delta=timedelta(minutes=-1),
     )
 
-    with pytest.raises(HTTPException):
+    with pytest.raises(AuthenticationError):
         await get_current_user(token, db_session)
 
 
@@ -59,5 +59,5 @@ async def test_get_current_user_user_not_found(db_session, monkeypatch, test_set
         expires_delta=timedelta(minutes=30),
     )
 
-    with pytest.raises(HTTPException):
+    with pytest.raises(AuthenticationError):
         await get_current_user(token, db_session)

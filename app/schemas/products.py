@@ -5,6 +5,18 @@ from uuid import UUID
 from pydantic import BaseModel, ConfigDict
 
 
+class NextCursorData(BaseModel):
+    created_at: datetime
+    id: UUID
+
+
+class ShortProductRatingData(BaseModel):
+    avg_rating: float
+    rating_count: int
+
+    model_config = ConfigDict(from_attributes=True)
+
+
 class ShortProductData(BaseModel):
     id: UUID
     name: str
@@ -12,15 +24,9 @@ class ShortProductData(BaseModel):
     stock: int
     category_id: UUID | None
     created_at: datetime
-    avg_rating: float
-    rating_count: int
+    product_rating: ShortProductRatingData | None
 
     model_config = ConfigDict(from_attributes=True)
-
-
-class NextCursorData(BaseModel):
-    created_at: datetime
-    id: UUID
 
 
 class ShortProductDataList(BaseModel):
@@ -28,13 +34,24 @@ class ShortProductDataList(BaseModel):
     next_cursor: NextCursorData
 
 
+class ProductRatingData(BaseModel):
+    avg_rating: float
+    rating_count: int
+    rating_1_count: int
+    rating_2_count: int
+    rating_3_count: int
+    rating_4_count: int
+    rating_5_count: int
+
+    model_config = ConfigDict(from_attributes=True)
+
+
 class ProductData(BaseModel):
     id: UUID
     name: str
     price: float
     stock: int
-    avg_rating: float
-    rating_count: int
+    product_rating: ProductRatingData | None
     description: str | None
     category_id: UUID | None
 

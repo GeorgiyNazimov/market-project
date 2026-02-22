@@ -33,15 +33,12 @@ def init_db(settings=None):
     if settings is None:
         settings = get_settings()
 
-    print("ENGINE INIT WITH:", settings.POSTGRES_HOST)
-
     _engine = get_engine(settings)
     _async_session_maker = get_async_session_maker(_engine)
 
 
 async def get_session() -> AsyncGenerator[AsyncSession, None]:
     if _async_session_maker is None:
-        print("Initializing DB without settings!")
         init_db()
 
     async with _async_session_maker() as session:

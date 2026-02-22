@@ -17,6 +17,7 @@ class CartItemData(BaseModel):
 
 class CartItemList(BaseModel):
     cart_items: List[CartItemData]
+    total_items: int
 
 
 class UpdateCartItemData(BaseModel):

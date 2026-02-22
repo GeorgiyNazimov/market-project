@@ -28,8 +28,10 @@ async def test_create_user_same_email(db_session):
     new_user2.password = get_password_hash(new_user2.password)
 
     await create_user_in_db(new_user1, db_session)
+    await db_session.flush()
     with pytest.raises(IntegrityError):
         await create_user_in_db(new_user2, db_session)
+        await db_session.flush()
 
 
 @pytest.mark.asyncio

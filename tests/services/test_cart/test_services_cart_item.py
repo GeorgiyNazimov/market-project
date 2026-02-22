@@ -1,7 +1,7 @@
 import pytest
-from fastapi import HTTPException
 from sqlalchemy import select
 
+from app.core.exceptions import ConflictError
 from app.database.models.cart import Cart
 from app.database.models.cart_item import CartItem
 from app.services.cart import (
@@ -65,14 +65,14 @@ async def test_insert_cart_item(db_session):
 
 
 @pytest.mark.asyncio
-async def test_insert_cart_item_same_product_multiple_times_integrity_error(db_session):
+async def test_insert_cart_item_same_product_multiple_times_conflict_error(db_session):
     product = product_factory()
     user = user_factory()
     db_session.add_all([product, user])
     await db_session.flush()
 
     await add_product_in_cart(product.id, user, db_session)
-    with pytest.raises(HTTPException):
+    with pytest.raises(ConflictError):
         await add_product_in_cart(product.id, user, db_session)
 
 
