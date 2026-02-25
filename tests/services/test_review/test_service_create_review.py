@@ -1,7 +1,7 @@
 import pytest
 from sqlalchemy import select
-from sqlalchemy.exc import IntegrityError
 
+from app.core.exceptions import NotFoundError
 from app.database.models.review import Review
 from app.services.review import create_product_review
 from tests.factories.products import product_factory
@@ -33,7 +33,7 @@ async def test_cannot_create_review_for_unknown_product(db_session):
     await db_session.flush()
     new_review_data = new_review_data_factory()
 
-    with pytest.raises(IntegrityError):
+    with pytest.raises(NotFoundError):
         await create_product_review(
             new_product.id, new_review_data, new_user, db_session
         )
@@ -47,7 +47,7 @@ async def test_cannot_create_review_by_unknown_user(db_session):
     await db_session.flush()
     new_review_data = new_review_data_factory()
 
-    with pytest.raises(IntegrityError):
+    with pytest.raises(NotFoundError):
         await create_product_review(
             new_product.id, new_review_data, new_user, db_session
         )

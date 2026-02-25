@@ -1,6 +1,6 @@
 import pytest
-from fastapi import HTTPException
 from sqlalchemy import select
+from sqlalchemy.exc import IntegrityError
 
 from app.database.models.cart import Cart
 from app.database.models.cart_item import CartItem
@@ -39,15 +39,17 @@ async def test_get_cart_item(db_session):
     new_cart_items = [cart_item_factory(cart) for i in range(4)]
     new_cart_items.sort(key=lambda x: x.id)
     db_session.add_all(new_cart_items)
+    cart.total_items = 4
     await db_session.flush()
 
-    cart_items = await get_cart_items_from_db(user, db_session)
+    cart_items, total_items = await get_cart_items_from_db(user, db_session)
     cart_items.sort(key=lambda x: x.id)
 
     assert cart_items[0].id == new_cart_items[0].id
     assert cart_items[1].id == new_cart_items[1].id
     assert cart_items[2].id == new_cart_items[2].id
     assert cart_items[3].id == new_cart_items[3].id
+    assert total_items == 4
 
 
 @pytest.mark.asyncio
@@ -72,13 +74,17 @@ async def test_insert_cart_item_same_product_multiple_times_integrity_error(db_s
     await db_session.flush()
 
     await insert_cart_item(product.id, user, db_session)
-    with pytest.raises(HTTPException):
+    await db_session.flush()
+    with pytest.raises(IntegrityError):
         await insert_cart_item(product.id, user, db_session)
+        await db_session.flush()
 
 
 @pytest.mark.asyncio
 async def test_update_cart_item(db_session):
-    new_cart_item = cart_item_factory()
+    new_cart = cart_factory()
+    new_cart_item = cart_item_factory(cart=new_cart)
+    new_cart.total_items = 1
     db_session.add(new_cart_item)
     await db_session.flush()
     update_cart_item_data = update_cart_item_data_factory(
@@ -89,3 +95,4 @@ async def test_update_cart_item(db_session):
 
     cart_item = (await db_session.execute(select(CartItem))).scalar_one_or_none()
     assert cart_item.quantity == update_cart_item_data.new_quantity
+    assert new_cart.total_items == 5

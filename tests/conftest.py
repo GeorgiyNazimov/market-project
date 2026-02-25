@@ -7,6 +7,7 @@ from sqlalchemy import text
 from alembic import command
 from alembic.config import Config
 from app.config.default import get_settings
+from app.core.exception_handler import register_exception_handlers
 from app.database import Base
 from app.database.connection.session import (
     get_async_session_maker,
@@ -63,7 +64,9 @@ def monkeypatch():
 
 @pytest.fixture
 def app():
-    return get_app()
+    app = get_app()
+    register_exception_handlers(app)
+    return app
 
 
 @pytest.fixture

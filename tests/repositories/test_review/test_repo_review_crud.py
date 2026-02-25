@@ -39,6 +39,7 @@ async def test_cannot_create_review_for_unknown_product(db_session):
         await create_product_review_db(
             new_product.id, new_review_data, new_user, db_session
         )
+        await db_session.flush()
 
 
 @pytest.mark.asyncio
@@ -53,3 +54,4 @@ async def test_cannot_create_review_by_unknown_user(db_session):
         await create_product_review_db(
             new_product.id, new_review_data, new_user, db_session
         )
+        await db_session.flush()
