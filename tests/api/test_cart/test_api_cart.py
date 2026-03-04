@@ -2,9 +2,8 @@ import pytest
 from fastapi import status
 from sqlalchemy import select
 
-from app.database.connection.session import get_session
+from app.api.dependencies import get_current_user, get_session
 from app.database.models.cart import Cart
-from app.services.auth import get_current_user
 from tests.factories.cart import cart_factory
 from tests.factories.users import user_factory
 

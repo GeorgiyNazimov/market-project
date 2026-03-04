@@ -4,15 +4,13 @@ from fastapi import APIRouter, Depends
 from fastapi.security import OAuth2PasswordRequestForm
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from app.config.default import Settings, get_settings
-from app.database.connection.session import get_session
+from app.api.dependencies import get_session, get_current_user, settings
 from app.database.models.user import User
 from app.schemas.auth import UserCreateData, UserGetData
 from app.services.auth import (
     authenticate_user,
     create_access_token,
     create_user,
-    get_current_user,
 )
 
 app = APIRouter(prefix="/auth", tags=["Authentication"])
@@ -21,7 +19,6 @@ app = APIRouter(prefix="/auth", tags=["Authentication"])
 @app.post("/token")
 async def login(
     authData: OAuth2PasswordRequestForm = Depends(),
-    settings: Settings = Depends(get_settings),
     session: AsyncSession = Depends(get_session),
 ):
     user = await authenticate_user(authData, session)

@@ -4,7 +4,7 @@ from uuid import UUID
 from fastapi import APIRouter, Depends, Query
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from app.database.connection.session import get_session
+from app.api.dependencies import get_session
 from app.repositories.products import get_random_product
 from app.schemas.products import NewProductData, ProductData, ShortProductDataList
 from app.services.products import (

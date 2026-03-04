@@ -2,9 +2,8 @@ import pytest
 from fastapi import status
 from sqlalchemy import select
 
-from app.database.connection.session import get_session
+from app.api.dependencies import get_current_user, get_session
 from app.database.models.review import Review
-from app.services.auth import get_current_user
 from tests.factories.products import product_factory
 from tests.factories.reviews import new_review_data_factory
 from tests.factories.users import user_factory

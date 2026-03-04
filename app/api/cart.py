@@ -3,10 +3,9 @@ from uuid import UUID
 from fastapi import APIRouter, Depends
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from app.database.connection.session import get_session
+from app.api.dependencies import get_session, get_current_user
 from app.database.models.user import User
 from app.schemas.cart import CartItemList, NewCartItemData, UpdateCartItemData
-from app.services.auth import get_current_user
 from app.services.cart import (
     add_product_in_cart,
     delete_cart,

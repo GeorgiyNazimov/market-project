@@ -2,7 +2,7 @@ import pytest
 from fastapi import status
 from sqlalchemy import select
 
-from app.database.connection.session import get_session
+from app.api.dependencies import get_session
 from app.database.models.product import Product
 from tests.factories.products import new_product_data_factory, product_factory
 

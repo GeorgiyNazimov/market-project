@@ -1,7 +1,7 @@
 import pytest
 from fastapi import status
 
-from app.database.connection import get_session
+from app.api.dependencies import get_session
 from tests.factories.products import multiple_products_factory
 
 
