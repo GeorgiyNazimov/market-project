@@ -18,6 +18,7 @@ class User(Base):
     password_hash: Mapped[str] = mapped_column(String, nullable=False)
     first_name: Mapped[Optional[str]] = mapped_column(String)
     last_name: Mapped[Optional[str]] = mapped_column(String)
+    role: Mapped[str] = mapped_column(String, nullable=True, default="user")
     created_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.utcnow)
 
     cart: Mapped[Optional["Cart"]] = relationship(back_populates="user", uselist=False)
