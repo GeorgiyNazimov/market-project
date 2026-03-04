@@ -1,5 +1,3 @@
-from collections.abc import AsyncGenerator
-
 from sqlalchemy.ext.asyncio import AsyncSession, create_async_engine
 from sqlalchemy.orm import sessionmaker
 
@@ -7,6 +5,7 @@ from app.config import Settings, get_settings
 
 
 def get_engine(settings: Settings):
+    print("create async engine")
     return create_async_engine(
         settings.database_uri,
         echo=False,
@@ -17,29 +16,10 @@ def get_engine(settings: Settings):
 
 
 def get_async_session_maker(engine) -> sessionmaker:
+    print("create async sessionmaker")
     return sessionmaker(engine, class_=AsyncSession, expire_on_commit=False)
 
+settings = get_settings()
+_engine = get_engine(settings)
+_async_session_maker = get_async_session_maker(_engine)
 
-_engine = None
-_async_session_maker = None
-
-
-def init_db(settings=None):
-    global _engine, _async_session_maker
-
-    if _engine is not None:
-        return
-
-    if settings is None:
-        settings = get_settings()
-
-    _engine = get_engine(settings)
-    _async_session_maker = get_async_session_maker(_engine)
-
-
-async def get_session() -> AsyncGenerator[AsyncSession, None]:
-    if _async_session_maker is None:
-        init_db()
-
-    async with _async_session_maker() as session:
-        yield session

@@ -4,7 +4,7 @@ from collections import defaultdict
 from sqlalchemy import select, update
 from sqlalchemy.dialects.postgresql import insert
 
-from app.database.connection.session import get_session
+from app.api.dependencies import get_session
 from app.database.models.product_avg_rating import ProductAverageRating
 from app.database.models.review import Review
 

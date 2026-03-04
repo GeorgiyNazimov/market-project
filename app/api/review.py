@@ -4,10 +4,9 @@ from uuid import UUID
 from fastapi import APIRouter, Depends, Query
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from app.database.connection.session import get_session
+from app.api.dependencies import get_session, get_current_user
 from app.database.models.user import User
 from app.schemas.review import NewReviewData, ReviewDataList
-from app.services.auth import get_current_user
 from app.services.review import create_product_review, get_product_reviews_list
 
 app = APIRouter(prefix="/reviews", tags=["Reviews"])

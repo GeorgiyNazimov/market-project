@@ -3,7 +3,8 @@ from datetime import timedelta
 import pytest
 
 from app.core.exceptions import AuthenticationError
-from app.services.auth import create_access_token, get_current_user
+from app.api.dependencies import get_current_user
+from app.services.auth import create_access_token
 from tests.factories.users import user_factory
 
 
