@@ -20,3 +20,13 @@ class UserGetData(BaseModel):
     role: SafeRole
 
     model_config = ConfigDict(from_attributes=True)
+
+class CurrentUserData(BaseModel):
+    id: UUID = Field(alias="sub")
+    role: SafeRole
+    exp: datetime
+
+    model_config = ConfigDict(
+        from_attributes=True,
+        populate_by_name=True,
+        )

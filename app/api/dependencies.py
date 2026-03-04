@@ -8,8 +8,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from app.config.default import get_settings
 from app.core.exceptions import AuthenticationError, ForbiddenError
 from app.database.connection.session import _async_session_maker
-from app.database.models.user import User
-from app.repositories.auth import get_user_from_db
+from app.schemas.auth import CurrentUserData
 
 
 oauth2_scheme = OAuth2PasswordBearer(
@@ -22,29 +21,26 @@ async def get_session() -> AsyncGenerator[AsyncSession, None]:
     async with _async_session_maker() as session:
         yield session
 
-async def get_current_user(
-    token: str = Security(oauth2_scheme), session: AsyncSession = Depends(get_session)
-) -> User:
+async def get_token_data(
+    token: str = Security(oauth2_scheme)
+) -> CurrentUserData:
     try:
         payload = jwt.decode(
             token, settings.SECRET_KEY, algorithms=[settings.ALGORITHM]
         )
-        email: str = payload.get("sub")
     except ExpiredSignatureError as e:
         raise AuthenticationError("Expired token") from e
     except JWTError as e:
         raise AuthenticationError("Invalid credential") from e
-    user = await get_user_from_db(email, session) if email else None
-    if user is None:
-        raise AuthenticationError("Invalid credential")
-    return user
+    current_user = CurrentUserData.model_validate(payload)
+    return current_user
 
 
 class RoleChecker:
     def __init__(self, allowed_roles: list[str]):
         self.allowed_roles = allowed_roles
 
-    def __call__(self, user: User = Depends(get_current_user)):
+    def __call__(self, user: CurrentUserData = Depends(get_token_data)):
         if user.role not in self.allowed_roles:
             raise ForbiddenError("Not enough permissions")
         return user

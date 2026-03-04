@@ -2,7 +2,7 @@ import pytest
 from fastapi import status
 from sqlalchemy import select
 
-from app.api.dependencies import get_current_user, get_session
+from app.api.dependencies import get_token_data, get_session
 from app.database.models.review import Review
 from tests.factories.products import product_factory
 from tests.factories.reviews import new_review_data_factory
@@ -17,11 +17,11 @@ async def test_create_review(db_session, async_client, app, override_get_session
     db_session.add_all([new_user, new_product])
     await db_session.flush()
 
-    def override_get_current_user():
+    def override_get_token_data():
         yield new_user
 
     app.dependency_overrides[get_session] = override_get_session
-    app.dependency_overrides[get_current_user] = override_get_current_user
+    app.dependency_overrides[get_token_data] = override_get_token_data
 
     response = await async_client.post(
         f"/api/v1/reviews/{new_product.id}/create_review",

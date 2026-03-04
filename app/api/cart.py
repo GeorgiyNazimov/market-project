@@ -4,7 +4,7 @@ from fastapi import APIRouter, Depends
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.api.dependencies import get_session, RoleChecker
-from app.database.models.user import User
+from app.schemas.auth import CurrentUserData
 from app.schemas.cart import CartItemList, NewCartItemData, UpdateCartItemData
 from app.services.cart import (
     add_product_in_cart,
@@ -19,7 +19,7 @@ app = APIRouter(prefix="/cart", tags=["Cart"])
 
 @app.get("/")
 async def get_all_cart_items_handler(
-    current_user: User = Depends(RoleChecker(["user", "admin"])),
+    current_user: CurrentUserData = Depends(RoleChecker(["user", "admin"])),
     session: AsyncSession = Depends(get_session),
 ) -> CartItemList:
     my_cart_items = await get_all_cart_items(current_user, session)
@@ -29,7 +29,7 @@ async def get_all_cart_items_handler(
 @app.patch("/update_cartitem")
 async def update_cart_item_quantity_handler(
     update_cartitem_data: UpdateCartItemData,
-    current_user: User = Depends(RoleChecker(["user", "admin"])),
+    current_user: CurrentUserData = Depends(RoleChecker(["user", "admin"])),
     session: AsyncSession = Depends(get_session),
 ):
     await update_cart_item_quantity(update_cartitem_data, session)
@@ -40,7 +40,7 @@ async def update_cart_item_quantity_handler(
 async def add_product_in_cart_handler(
     product_id: UUID,
     session: AsyncSession = Depends(get_session),
-    current_user: User = Depends(RoleChecker(["user", "admin"])),
+    current_user: CurrentUserData = Depends(RoleChecker(["user", "admin"])),
 ) -> NewCartItemData:
     new_cart_item = await add_product_in_cart(product_id, current_user, session)
     return new_cart_item
@@ -49,7 +49,7 @@ async def add_product_in_cart_handler(
 @app.delete("/delete_cartitem/{cart_item_id}")
 async def delete_cart_item_handler(
     cart_item_id: UUID,
-    current_user: User = Depends(RoleChecker(["user", "admin"])),
+    current_user: CurrentUserData = Depends(RoleChecker(["user", "admin"])),
     session: AsyncSession = Depends(get_session),
 ):
     await delete_cart_item(cart_item_id, session)
@@ -58,7 +58,7 @@ async def delete_cart_item_handler(
 
 @app.delete("/delete_my_cart")
 async def delete_cart_handler(
-    current_user: User = Depends(RoleChecker(["user", "admin"])),
+    current_user: CurrentUserData = Depends(RoleChecker(["user", "admin"])),
     session: AsyncSession = Depends(get_session),
 ):
     await delete_cart(current_user, session)
