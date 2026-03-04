@@ -34,3 +34,7 @@ class AuthenticationError(AppException):
 class UnprocessableEntityError(AppException):
     status_code = 422
     error_code = "unproc_entity_error"
+
+class ForbiddenError(AppException):
+    status_code = 403
+    error_code = "forbidden_error"

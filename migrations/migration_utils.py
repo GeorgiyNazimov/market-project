@@ -22,7 +22,7 @@ def fmt_fk(table: str, columns: list[str], referred_table: str) -> str:
 def is_column_not_null(conn, table: str, column: str) -> bool:
     query = sa.text(
         "SELECT attnotnull FROM pg_attribute "
-        "WHERE attrelid = :table::regclass AND attname = :column"
+        "WHERE attrelid = :table\:\:regclass AND attname = :column"
     )
     return bool(conn.execute(query, {"table": table, "column": column}).scalar())
 

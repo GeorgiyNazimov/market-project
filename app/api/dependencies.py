@@ -6,7 +6,7 @@ from jose import ExpiredSignatureError, JWTError, jwt
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.config.default import get_settings
-from app.core.exceptions import AuthenticationError
+from app.core.exceptions import AuthenticationError, ForbiddenError
 from app.database.connection.session import _async_session_maker
 from app.database.models.user import User
 from app.repositories.auth import get_user_from_db
@@ -38,3 +38,13 @@ async def get_current_user(
     if user is None:
         raise AuthenticationError("Invalid credential")
     return user
+
+
+class RoleChecker:
+    def __init__(self, allowed_roles: list[str]):
+        self.allowed_roles = allowed_roles
+
+    def __call__(self, user: User = Depends(get_current_user)):
+        if user.role not in self.allowed_roles:
+            raise ForbiddenError("Not enough permissions")
+        return user

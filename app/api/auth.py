@@ -4,7 +4,7 @@ from fastapi import APIRouter, Depends
 from fastapi.security import OAuth2PasswordRequestForm
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from app.api.dependencies import get_session, get_current_user, settings
+from app.api.dependencies import get_session, RoleChecker, settings
 from app.database.models.user import User
 from app.schemas.auth import UserCreateData, UserGetData
 from app.services.auth import (
@@ -31,7 +31,7 @@ async def login(
 
 
 @app.get("/users/me")
-async def read_users_me(current_user: User = Depends(get_current_user)) -> UserGetData:
+async def read_users_me(current_user: User = Depends(RoleChecker(["user", "admin"]))) -> UserGetData:
     return UserGetData.model_validate(current_user)
 
 
