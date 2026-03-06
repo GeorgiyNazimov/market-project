@@ -59,7 +59,7 @@ def upgrade() -> None:
             raise Exception(
                 f"\n[MIGRATION ERROR]: Найдено нарушение целостности данных в {TABLE}.{COLUMN}.\n"
                 f"Для продолжения необходимо заполнить NULL-значения.\n"
-                f"ЗАПУСТИТЕ МИГРАЦИЮ ДАННЫХ: python scripts/data_migrations/{DATA_MIGRATION_NAME}"
+                f"ЗАПУСТИТЕ МИГРАЦИЮ ДАННЫХ: python migrations/data_migrations/{DATA_MIGRATION_NAME}"
             )
 
         c_status = get_constraint_status(conn, DB_CONSTRAINT)
