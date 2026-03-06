@@ -2,7 +2,7 @@ import pytest
 from fastapi import status
 from sqlalchemy import select
 
-from app.api.dependencies import get_session, get_current_user
+from app.api.dependencies import get_session, get_token_data
 from app.database.models.cart import Cart
 from app.database.models.cart_item import CartItem
 from tests.factories.cart import (
@@ -21,11 +21,11 @@ async def test_delete_cart_item(db_session, async_client, app, override_get_sess
     await db_session.flush()
     user = new_cart_item.cart.user
 
-    def override_get_current_user():
+    def override_get_token_data():
         yield user
 
     app.dependency_overrides[get_session] = override_get_session
-    app.dependency_overrides[get_current_user] = override_get_current_user
+    app.dependency_overrides[get_token_data] = override_get_token_data
 
     response = await async_client.delete(
         f"/api/v1/cart/delete_cartitem/{new_cart_item.id}"
@@ -46,11 +46,11 @@ async def test_get_cart_item(db_session, async_client, app, override_get_session
     db_session.add_all(new_cart_items)
     await db_session.flush()
 
-    def override_get_current_user():
+    def override_get_token_data():
         yield user
 
     app.dependency_overrides[get_session] = override_get_session
-    app.dependency_overrides[get_current_user] = override_get_current_user
+    app.dependency_overrides[get_token_data] = override_get_token_data
 
     response = await async_client.get("/api/v1/cart/")
 
@@ -71,11 +71,11 @@ async def test_insert_cart_item(db_session, async_client, app, override_get_sess
     db_session.add_all([product, user])
     await db_session.flush()
 
-    def override_get_current_user():
+    def override_get_token_data():
         yield user
 
     app.dependency_overrides[get_session] = override_get_session
-    app.dependency_overrides[get_current_user] = override_get_current_user
+    app.dependency_overrides[get_token_data] = override_get_token_data
 
     response = await async_client.post(f"/api/v1/cart/create_cartitem/{product.id}")
 
@@ -95,11 +95,11 @@ async def test_insert_cart_item_same_product_multiple_times_conflict_error(
     db_session.add_all([product, user])
     await db_session.flush()
 
-    async def override_get_current_user():
+    async def override_get_token_data():
         yield user
 
     app.dependency_overrides[get_session] = override_get_session
-    app.dependency_overrides[get_current_user] = override_get_current_user
+    app.dependency_overrides[get_token_data] = override_get_token_data
 
     response = await async_client.post(f"/api/v1/cart/create_cartitem/{product.id}")
     assert response.status_code == status.HTTP_200_OK
@@ -120,11 +120,11 @@ async def test_update_cart_item(db_session, async_client, app, override_get_sess
     )
     update_cart_item_data.cart_item_id = str(update_cart_item_data.cart_item_id)
 
-    def override_get_current_user():
+    def override_get_token_data():
         yield user
 
     app.dependency_overrides[get_session] = override_get_session
-    app.dependency_overrides[get_current_user] = override_get_current_user
+    app.dependency_overrides[get_token_data] = override_get_token_data
 
     response = await async_client.patch(
         "/api/v1/cart/update_cartitem", json=update_cart_item_data.model_dump()

@@ -85,8 +85,8 @@ def override_get_session(db_session):
 
 
 @pytest.fixture
-def override_get_current_user():
-    async def _override_get_current_user():
+def override_role_checker():
+    async def _override_role_checker():
         return user_factory()
 
-    return _override_get_current_user
+    return _override_role_checker

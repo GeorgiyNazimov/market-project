@@ -2,7 +2,7 @@ import pytest
 from fastapi import status
 from sqlalchemy import select
 
-from app.api.dependencies import get_current_user, get_session
+from app.api.dependencies import get_token_data, get_session
 from app.database.models.cart import Cart
 from tests.factories.cart import cart_factory
 from tests.factories.users import user_factory
@@ -15,11 +15,11 @@ async def test_delete_cart(db_session, async_client, app, override_get_session):
     db_session.add_all([user, cart])
     await db_session.flush()
 
-    def override_get_current_user():
+    def override_get_token_data():
         yield user
 
     app.dependency_overrides[get_session] = override_get_session
-    app.dependency_overrides[get_current_user] = override_get_current_user
+    app.dependency_overrides[get_token_data] = override_get_token_data
 
     response = await async_client.delete("/api/v1/cart/delete_my_cart")
 
@@ -37,11 +37,11 @@ async def test_delete_cart_multiple_times(
     db_session.add_all([user, cart])
     await db_session.flush()
 
-    def override_get_current_user():
+    def override_get_token_data():
         yield user
 
     app.dependency_overrides[get_session] = override_get_session
-    app.dependency_overrides[get_current_user] = override_get_current_user
+    app.dependency_overrides[get_token_data] = override_get_token_data
 
     response = await async_client.delete("/api/v1/cart/delete_my_cart")
     assert response.status_code == status.HTTP_200_OK

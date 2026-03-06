@@ -4,7 +4,6 @@ from sqlalchemy.exc import IntegrityError
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.exceptions import ConflictError, UnprocessableEntityError
-from app.database.models.user import User
 from app.repositories.cart import (
     delete_cart_from_db,
     delete_cart_item_from_db,
@@ -12,6 +11,7 @@ from app.repositories.cart import (
     insert_cart_item,
     update_cart_item_quantity_in_db,
 )
+from app.schemas.auth import CurrentUserData
 from app.schemas.cart import (
     CartItemData,
     CartItemList,
@@ -20,7 +20,7 @@ from app.schemas.cart import (
 )
 
 
-async def get_all_cart_items(current_user: User, session: AsyncSession):
+async def get_all_cart_items(current_user: CurrentUserData, session: AsyncSession):
     cart_items, total_items = await get_cart_items_from_db(current_user, session)
     return CartItemList(
         cart_items=[CartItemData.model_validate(cart_item) for cart_item in cart_items],
@@ -29,7 +29,7 @@ async def get_all_cart_items(current_user: User, session: AsyncSession):
 
 
 async def add_product_in_cart(
-    product_id: UUID, current_user: User, session: AsyncSession
+    product_id: UUID, current_user: CurrentUserData, session: AsyncSession
 ):
     try:
         new_cart_item = await insert_cart_item(product_id, current_user, session)
@@ -54,6 +54,6 @@ async def delete_cart_item(cart_item_id: UUID, session: AsyncSession):
     await session.commit()
 
 
-async def delete_cart(current_user: User, session: AsyncSession):
+async def delete_cart(current_user: CurrentUserData, session: AsyncSession):
     await delete_cart_from_db(current_user, session)
     await session.commit()

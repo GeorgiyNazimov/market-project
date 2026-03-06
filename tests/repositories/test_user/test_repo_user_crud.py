@@ -3,7 +3,7 @@ from sqlalchemy import select
 from sqlalchemy.exc import IntegrityError
 
 from app.database.models.user import User
-from app.repositories.auth import create_user_in_db, get_user_from_db
+from app.repositories.auth import create_user_in_db, get_user_from_db_by_email
 from app.services.auth import get_password_hash
 from tests.factories.users import new_user_data_factory, user_factory
 
@@ -40,7 +40,7 @@ async def test_get_user(db_session):
     db_session.add(new_user)
     await db_session.flush()
 
-    user_from_db = await get_user_from_db(new_user.email, db_session)
+    user_from_db = await get_user_from_db_by_email(new_user.email, db_session)
 
     assert user_from_db.email == new_user.email
     assert user_from_db.password_hash == new_user.password_hash

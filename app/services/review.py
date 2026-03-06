@@ -5,19 +5,19 @@ from sqlalchemy.exc import IntegrityError
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.exceptions import ConflictError, NotFoundError
-from app.database.models.user import User
 from app.repositories.products import update_product_average_rating
 from app.repositories.review import (
     create_product_review_db,
     get_product_reviews_list_db,
 )
+from app.schemas.auth import CurrentUserData
 from app.schemas.review import NewReviewData, NextCursorData, ReviewData, ReviewDataList
 
 
 async def create_product_review(
     product_id: UUID,
     reviewData: NewReviewData,
-    current_user: User,
+    current_user: CurrentUserData,
     session: AsyncSession,
 ):
     try:

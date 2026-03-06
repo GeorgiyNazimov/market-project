@@ -7,11 +7,11 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from app.database.models.cart import Cart
 from app.database.models.cart_item import CartItem
 from app.database.models.product import Product
-from app.database.models.user import User
+from app.schemas.auth import CurrentUserData
 from app.schemas.cart import UpdateCartItemData
 
 
-async def get_cart(current_user: User, session: AsyncSession):
+async def get_cart(current_user: CurrentUserData, session: AsyncSession):
     # В большинстве случаев get_cart вызывается для просмотра товаров в
     # корзине или для добавления новых товаров, что означает, что функция завершается
     # после первого быстрого SELECT. INSERT через session.add выполняется
@@ -35,7 +35,7 @@ async def get_cart(current_user: User, session: AsyncSession):
     return cart
 
 
-async def get_cart_items_from_db(current_user: User, session: AsyncSession):
+async def get_cart_items_from_db(current_user: CurrentUserData, session: AsyncSession):
     cart = await get_cart(current_user, session)
     cart_items = (
         await session.execute(
@@ -54,7 +54,7 @@ async def get_cart_items_from_db(current_user: User, session: AsyncSession):
     return cart_items, cart.total_items
 
 
-async def insert_cart_item(product_id: UUID, current_user: User, session: AsyncSession):
+async def insert_cart_item(product_id: UUID, current_user: CurrentUserData, session: AsyncSession):
     cart = await get_cart(current_user, session)
 
     new_cart_item = CartItem(cart_id=cart.id, product_id=product_id)
@@ -91,5 +91,5 @@ async def delete_cart_item_from_db(cart_item_id: UUID, session: AsyncSession):
     await session.execute(delete(CartItem).where(CartItem.id == cart_item_id))
 
 
-async def delete_cart_from_db(current_user: User, session: AsyncSession):
+async def delete_cart_from_db(current_user: CurrentUserData, session: AsyncSession):
     await session.execute(delete(Cart).where(Cart.user_id == current_user.id))

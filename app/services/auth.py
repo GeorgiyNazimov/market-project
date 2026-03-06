@@ -9,8 +9,8 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from app.api.dependencies import settings
 from app.core.exceptions import AuthenticationError, ConflictError
 from app.database.models.user import User
-from app.repositories.auth import create_user_in_db, get_user_from_db
-from app.schemas.auth import UserCreateData
+from app.repositories.auth import create_user_in_db, get_user_from_db_by_email, get_user_from_db_by_id
+from app.schemas.auth import CurrentUserData, UserCreateData, UserGetData
 
 # Контекст для хеширования паролей
 pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
@@ -28,7 +28,7 @@ def get_password_hash(password):
 async def authenticate_user(
     authData: OAuth2PasswordRequestForm, session: AsyncSession
 ) -> User:
-    user = await get_user_from_db(authData.username, session)
+    user = await get_user_from_db_by_email(authData.username, session)
     if not user:
         raise AuthenticationError("Invalid credential")
     if not verify_password(authData.password, user.password_hash):
@@ -52,3 +52,7 @@ async def create_user(userData: UserCreateData, session: AsyncSession) -> User:
         await session.rollback()
         raise ConflictError("User already exists") from e
     return new_user
+
+async def get_user_data(current_user: CurrentUserData, session: AsyncSession) -> UserGetData:
+    user = await get_user_from_db_by_id(current_user.id, session)
+    return UserGetData.model_validate(user)
