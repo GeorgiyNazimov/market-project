@@ -10,7 +10,7 @@ RUN poetry config virtualenvs.create false && poetry install --no-root --only ma
 
 COPY ./app ./app
 COPY alembic.ini ./
-COPY alembic ./alembic
+COPY migrations ./migrations
 
 ENV PYTHONPATH=/app
 
