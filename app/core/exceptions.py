@@ -1,12 +1,11 @@
 class AppException(Exception):
     status_code = 500
     error_code = "app_error"
-    headers = None
-
-    def __init__(self, message=None, headers=None):
+    
+    def __init__(self, message=None, payload=None, headers=None):
         self.message = message or "Application error"
-        if headers:
-            self.headers = headers
+        self.payload = payload
+        self.headers = headers
         super().__init__(self.message)
 
 
@@ -38,3 +37,7 @@ class UnprocessableEntityError(AppException):
 class ForbiddenError(AppException):
     status_code = 403
     error_code = "forbidden_error"
+
+class BadRequest(AppException):
+    status_code = 400
+    error_code = "bad_request"

@@ -24,3 +24,7 @@ class OrderItem(Base):
 
     order: Mapped["Order"] = relationship(back_populates="items")
     product: Mapped["Product"] = relationship()
+
+    @property
+    def product_name(self):
+        return self.product.name if self.product else "Unknown Product"

@@ -3,10 +3,12 @@ from uuid import UUID
 from sqlalchemy import delete, select, update
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy.ext.asyncio import AsyncSession
+from sqlalchemy.orm import joinedload, selectinload
 
 from app.database.models.cart import Cart
 from app.database.models.cart_item import CartItem
 from app.database.models.product import Product
+from app.database.models.user import User
 from app.schemas.auth import CurrentUserData
 from app.schemas.cart import UpdateCartItemData
 
@@ -93,3 +95,39 @@ async def delete_cart_item_from_db(cart_item_id: UUID, session: AsyncSession):
 
 async def delete_cart_from_db(current_user: CurrentUserData, session: AsyncSession):
     await session.execute(delete(Cart).where(Cart.user_id == current_user.id))
+
+
+async def get_cart_items_by_ids_repo(
+    cart_item_ids: list[UUID], user_id: UUID | None, session: AsyncSession
+):
+    stmt = (
+        select(CartItem)
+        .join(CartItem.cart)
+        .join(Cart.user)
+        .options(
+            selectinload(CartItem.product),
+            joinedload(CartItem.cart).joinedload(Cart.user),
+        )
+        .where(CartItem.id.in_(cart_item_ids))
+        .with_for_update(of=CartItem)
+    )
+
+    if user_id:
+        stmt = stmt.where(User.id == user_id)
+
+    cart_items = (await session.execute(stmt)).scalars().all()
+    return cart_items
+
+
+async def delete_cart_items_repo(
+    cart_item_ids: list[UUID], user_id: UUID | None, session: AsyncSession
+):
+    stmt = delete(CartItem).where(CartItem.id.in_(cart_item_ids)).returning(CartItem.id)
+
+    if user_id:
+        stmt = stmt.where(
+            CartItem.cart_id.in_(select(Cart.id).where(Cart.user_id == user_id))
+        )
+
+    result = await session.execute(stmt)
+    return result.scalars().all()

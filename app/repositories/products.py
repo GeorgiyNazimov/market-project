@@ -2,7 +2,7 @@ import random
 from datetime import datetime, timedelta
 from uuid import UUID
 
-from sqlalchemy import func, select, tuple_
+from sqlalchemy import bindparam, func, select, tuple_, update
 from sqlalchemy.dialects.postgresql import insert
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import joinedload, selectinload
@@ -82,6 +82,18 @@ async def update_product_average_rating(
     )
 
     await session.execute(stmt)
+
+
+async def update_products_stock_repo(
+    stock_update_data: list[dict], session: AsyncSession
+):
+    await session.execute(
+        update(Product.__table__)
+        .where(Product.id == bindparam("product_id"))
+        .values(stock=Product.stock + bindparam("quantity")),
+        stock_update_data,
+        execution_options={"synchronize_session": False},
+    )
 
 
 # тестовая функция для добавления новых товаров в бд
