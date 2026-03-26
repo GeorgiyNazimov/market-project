@@ -10,23 +10,30 @@ from tests.factories.products import product_factory
 from tests.factories.users import user_factory
 
 
-def cart_factory(user: User | None = None) -> Cart:
+def cart_factory(user: User | None = None, **kwargs) -> Cart:
+    target_user = user or user_factory()
+    
     return Cart(
-        id=uuid4(),
-        user=user or user_factory(),
-        total_items=0,
-        created_at=datetime.utcnow(),
+        id=kwargs.get("id", uuid4()),
+        user=target_user,
+        total_items=kwargs.get("total_items", 0),
+        created_at=kwargs.get("created_at", datetime.utcnow()),
     )
 
 
 def cart_item_factory(
-    cart: Cart | None = None, product: Product | None = None
+    cart: Cart | None = None, 
+    product: Product | None = None, 
+    **kwargs
 ) -> CartItem:
+    target_product = product or product_factory()
+    target_cart = cart or cart_factory()
+
     return CartItem(
-        id=uuid4(),
-        cart=cart or cart_factory(),
-        product=product or product_factory(),
-        quantity=1,
+        id=kwargs.get("id", uuid4()),
+        cart=target_cart,
+        product=target_product,
+        quantity=kwargs.get("quantity", 1),
     )
 
 
