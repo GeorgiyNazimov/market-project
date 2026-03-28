@@ -3,8 +3,8 @@ from uuid import UUID
 from fastapi import APIRouter, Depends
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from app.api.dependencies import get_session, RoleChecker
-from app.schemas.auth import CurrentUserData
+from app.api.dependencies import RoleChecker, get_session
+from app.schemas.user import CurrentUserData
 from app.schemas.cart import CartItemList, NewCartItemData, UpdateCartItemData
 from app.services.cart import (
     add_product_in_cart,

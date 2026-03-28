@@ -2,7 +2,7 @@ import pytest
 from fastapi import status
 from sqlalchemy import select
 
-from app.api.dependencies import get_token_data, get_session
+from app.api.dependencies import get_session, get_token_data
 from app.database.models.cart import Cart
 from tests.factories.cart import cart_factory
 from tests.factories.users import user_factory

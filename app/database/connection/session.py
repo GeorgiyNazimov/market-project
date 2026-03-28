@@ -19,7 +19,7 @@ def get_async_session_maker(engine) -> sessionmaker:
     print("create async sessionmaker")
     return sessionmaker(engine, class_=AsyncSession, expire_on_commit=False)
 
+
 settings = get_settings()
 _engine = get_engine(settings)
 _async_session_maker = get_async_session_maker(_engine)
-

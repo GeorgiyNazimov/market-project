@@ -2,7 +2,7 @@ import pytest
 from fastapi import status
 from sqlalchemy import select
 
-from app.api.dependencies import get_token_data, get_session
+from app.api.dependencies import get_session, get_token_data
 from app.database.models.review import Review
 from tests.factories.products import product_factory
 from tests.factories.reviews import new_review_data_factory

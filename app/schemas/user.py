@@ -1,10 +1,11 @@
 from datetime import datetime
-from uuid import UUID
 from typing import Annotated
+from uuid import UUID
 
-from pydantic import BaseModel, ConfigDict, BeforeValidator, Field
+from pydantic import BaseModel, BeforeValidator, ConfigDict, Field
 
 SafeRole = Annotated[str, BeforeValidator(lambda role: role or "user")]
+
 
 class UserCreateData(BaseModel):
     email: str
@@ -21,6 +22,7 @@ class UserGetData(BaseModel):
 
     model_config = ConfigDict(from_attributes=True)
 
+
 class CurrentUserData(BaseModel):
     id: UUID = Field(alias="sub")
     role: SafeRole
@@ -29,4 +31,9 @@ class CurrentUserData(BaseModel):
     model_config = ConfigDict(
         from_attributes=True,
         populate_by_name=True,
-        )
+    )
+
+
+class Token(BaseModel):
+    access_token: str
+    token_type: str

@@ -1,1 +1,1 @@
-from .auth import UserCreateData, UserGetData
+from .user import UserCreateData, UserGetData

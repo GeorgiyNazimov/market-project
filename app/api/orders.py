@@ -3,13 +3,13 @@ from uuid import UUID
 from fastapi import APIRouter, Depends
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from app.api.dependencies import get_session, RoleChecker
-from app.schemas.auth import CurrentUserData
+from app.api.dependencies import RoleChecker, get_session
+from app.schemas.user import CurrentUserData
 from app.schemas.orders import OrderCreate, OrderListRead, OrderRead
 from app.services.orders import (
-    get_orders_by_user_id_serv,
-    delete_order_serv,
     create_order_serv,
+    delete_order_serv,
+    get_orders_by_user_id_serv,
 )
 
 app = APIRouter(prefix="/order", tags=["Order"])

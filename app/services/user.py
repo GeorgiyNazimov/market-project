@@ -1,0 +1,73 @@
+from datetime import datetime, timedelta
+
+from fastapi.security import OAuth2PasswordRequestForm
+from jose import jwt
+from passlib.context import CryptContext
+from sqlalchemy.exc import IntegrityError
+from sqlalchemy.ext.asyncio import AsyncSession
+
+from app.api.dependencies import settings
+from app.core.exceptions import AuthenticationError, ConflictError, NotFoundError
+from app.database.models.user import User
+from app.repositories.user import (
+    create_user_repo,
+    get_user_by_email_repo,
+    get_user_by_id_repo,
+)
+from app.schemas.user import CurrentUserData, Token, UserCreateData, UserGetData
+
+# Контекст для хеширования паролей
+pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
+
+
+def verify_password(plain_password, hashed_password):
+    return pwd_context.verify(plain_password, hashed_password)
+
+
+def get_password_hash(password):
+    return pwd_context.hash(password)
+
+
+async def login_serv(
+    auth_data: OAuth2PasswordRequestForm, session: AsyncSession
+) -> Token:
+    user = await get_user_by_email_repo(auth_data.username, session)
+
+    if not user:
+        raise AuthenticationError("Invalid credential")
+    if not verify_password(auth_data.password, user.password_hash):
+        raise AuthenticationError("Invalid credential")
+
+    access_token_expires = timedelta(minutes=settings.ACCESS_TOKEN_EXPIRE_MINUTES)
+    access_token = create_access_token(
+        data={"sub": str(user.id), "role": user.role},
+        expires_delta=access_token_expires,
+    )
+    return Token(access_token=access_token, token_type="bearer")
+
+
+def create_access_token(data: dict, expires_delta: timedelta = None):
+    to_encode = data.copy()
+    expire = datetime.utcnow() + (expires_delta or timedelta(minutes=15))
+    to_encode.update({"exp": expire})
+    return jwt.encode(to_encode, settings.SECRET_KEY, algorithm=settings.ALGORITHM)
+
+
+async def create_user_serv(user_data: UserCreateData, session: AsyncSession) -> User:
+    try:
+        user_data.password = get_password_hash(user_data.password)
+        new_user = await create_user_repo(user_data, session)
+        await session.commit()
+    except IntegrityError as e:
+        await session.rollback()
+        raise ConflictError("User already exists") from e
+    return new_user
+
+
+async def get_user_data_serv(
+    current_user: CurrentUserData, session: AsyncSession
+) -> UserGetData:
+    user = await get_user_by_id_repo(current_user.id, session)
+    if not user:
+        raise NotFoundError("User not found")
+    return UserGetData.model_validate(user)

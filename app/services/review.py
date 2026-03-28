@@ -10,7 +10,7 @@ from app.repositories.review import (
     create_product_review_db,
     get_product_reviews_list_db,
 )
-from app.schemas.auth import CurrentUserData
+from app.schemas.user import CurrentUserData
 from app.schemas.review import NewReviewData, NextCursorData, ReviewData, ReviewDataList
 
 

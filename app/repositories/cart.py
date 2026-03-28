@@ -9,7 +9,7 @@ from app.database.models.cart import Cart
 from app.database.models.cart_item import CartItem
 from app.database.models.product import Product
 from app.database.models.user import User
-from app.schemas.auth import CurrentUserData
+from app.schemas.user import CurrentUserData
 from app.schemas.cart import UpdateCartItemData
 
 
@@ -56,7 +56,9 @@ async def get_cart_items_from_db(current_user: CurrentUserData, session: AsyncSe
     return cart_items, cart.total_items
 
 
-async def insert_cart_item(product_id: UUID, current_user: CurrentUserData, session: AsyncSession):
+async def insert_cart_item(
+    product_id: UUID, current_user: CurrentUserData, session: AsyncSession
+):
     cart = await get_cart(current_user, session)
 
     new_cart_item = CartItem(cart_id=cart.id, product_id=product_id)

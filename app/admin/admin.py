@@ -1,10 +1,11 @@
-from app.api.dependencies import get_session
 from contextlib import asynccontextmanager
+
 from sqladmin.authentication import AuthenticationBackend
 from starlette.requests import Request
 
-from app.repositories.auth import get_user_from_db_by_email
-from app.services.auth import verify_password
+from app.api.dependencies import get_session
+from app.repositories.user import get_user_by_email_repo
+from app.services.user import verify_password
 
 
 class AdminAuth(AuthenticationBackend):
@@ -14,14 +15,14 @@ class AdminAuth(AuthenticationBackend):
         password = form.get("password")
 
         async with asynccontextmanager(get_session)() as session:
-            user = await get_user_from_db_by_email(email, session)
+            user = await get_user_by_email_repo(email, session)
             if not user:
                 return False
             if not verify_password(password, user.password_hash):
                 return False
             if not user.role == "admin":
                 return False
-        
+
         request.session.update({"token": "some-secret-token"})
         return True
 
@@ -34,5 +35,6 @@ class AdminAuth(AuthenticationBackend):
         if not token:
             return False
         return True
+
 
 authentication_backend = AdminAuth(secret_key="very-secret-key")
