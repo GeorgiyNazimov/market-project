@@ -19,7 +19,9 @@ class Order(Base):
         UUID(as_uuid=True), ForeignKey("users.id", ondelete="CASCADE")
     )
     status: Mapped[str] = mapped_column(String, default="pending")
-    total_price: Mapped[Decimal] = mapped_column(Numeric(10, 2), nullable=False, default=0)
+    total_price: Mapped[Decimal] = mapped_column(
+        Numeric(10, 2), nullable=False, default=0
+    )
     created_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.utcnow)
     updated_at: Mapped[datetime] = mapped_column(
         DateTime, default=datetime.utcnow, onupdate=datetime.utcnow, nullable=False

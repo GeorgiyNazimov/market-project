@@ -4,7 +4,7 @@ from uuid import UUID
 from fastapi import APIRouter, Depends, Query
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from app.api.dependencies import get_session, RoleChecker
+from app.api.dependencies import RoleChecker, get_session
 from app.schemas.auth import CurrentUserData
 from app.schemas.review import NewReviewData, ReviewDataList
 from app.services.review import create_product_review, get_product_reviews_list

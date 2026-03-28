@@ -21,7 +21,7 @@ async def set_default_roles_for_users():
             stmt = (
                 update(User)
                 .where(User.id.in_(subq))
-                .values(role = "user")
+                .values(role="user")
                 .returning(User.id)
             )
 

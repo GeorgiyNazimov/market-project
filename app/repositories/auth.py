@@ -11,11 +11,13 @@ async def get_user_from_db_by_email(email: str, session: AsyncSession) -> User |
     ).scalar_one_or_none()
     return user
 
+
 async def get_user_from_db_by_id(id: str, session: AsyncSession) -> User | None:
     user = (
         await session.execute(select(User).where(User.id == id))
     ).scalar_one_or_none()
     return user
+
 
 async def create_user_in_db(userData: UserCreateData, session: AsyncSession) -> User:
     new_user = User(email=userData.email, password_hash=userData.password)

@@ -1,10 +1,12 @@
 import pytest
-from app.services.orders import delete_order_serv
-from app.core.exceptions import NotFoundError, ForbiddenError
+
+from app.core.exceptions import ForbiddenError, NotFoundError
 from app.database.models import Order, Product
-from tests.factories.users import user_factory
+from app.services.orders import delete_order_serv
 from tests.factories.orders import order_factory, order_item_factory
 from tests.factories.products import product_factory
+from tests.factories.users import user_factory
+
 
 @pytest.mark.asyncio
 async def test_delete_order_success_restores_stock(db_session):
@@ -18,12 +20,13 @@ async def test_delete_order_success_restores_stock(db_session):
     await delete_order_serv(order.id, user, db_session)
 
     db_session.expunge_all()
-    
+
     db_order = await db_session.get(Order, order.id)
     assert db_order is None
-    
+
     db_product = await db_session.get(Product, product.id)
     assert db_product.stock == 13
+
 
 @pytest.mark.asyncio
 async def test_delete_order_admin_success(db_session):
@@ -35,11 +38,12 @@ async def test_delete_order_admin_success(db_session):
     await db_session.flush()
 
     await delete_order_serv(order.id, admin, db_session)
-    
+
     db_session.expunge_all()
 
     db_order = await db_session.get(Order, order.id)
     assert db_order is None
+
 
 @pytest.mark.asyncio
 async def test_delete_order_forbidden_for_other_user(db_session):

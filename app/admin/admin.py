@@ -1,8 +1,9 @@
-from app.api.dependencies import get_session
 from contextlib import asynccontextmanager
+
 from sqladmin.authentication import AuthenticationBackend
 from starlette.requests import Request
 
+from app.api.dependencies import get_session
 from app.repositories.auth import get_user_from_db_by_email
 from app.services.auth import verify_password
 
@@ -21,7 +22,7 @@ class AdminAuth(AuthenticationBackend):
                 return False
             if not user.role == "admin":
                 return False
-        
+
         request.session.update({"token": "some-secret-token"})
         return True
 
@@ -34,5 +35,6 @@ class AdminAuth(AuthenticationBackend):
         if not token:
             return False
         return True
+
 
 authentication_backend = AdminAuth(secret_key="very-secret-key")

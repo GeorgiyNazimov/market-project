@@ -56,7 +56,9 @@ async def get_cart_items_from_db(current_user: CurrentUserData, session: AsyncSe
     return cart_items, cart.total_items
 
 
-async def insert_cart_item(product_id: UUID, current_user: CurrentUserData, session: AsyncSession):
+async def insert_cart_item(
+    product_id: UUID, current_user: CurrentUserData, session: AsyncSession
+):
     cart = await get_cart(current_user, session)
 
     new_cart_item = CartItem(cart_id=cart.id, product_id=product_id)

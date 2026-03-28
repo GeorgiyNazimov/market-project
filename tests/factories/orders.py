@@ -2,8 +2,8 @@ from datetime import datetime
 from decimal import Decimal
 from uuid import uuid4
 
-from app.database.models.order_item import OrderItem
 from app.database.models.order import Order
+from app.database.models.order_item import OrderItem
 from app.database.models.product import Product
 from app.database.models.user import User
 from tests.factories.products import product_factory

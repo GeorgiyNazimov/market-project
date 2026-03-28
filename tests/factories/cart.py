@@ -12,7 +12,7 @@ from tests.factories.users import user_factory
 
 def cart_factory(user: User | None = None, **kwargs) -> Cart:
     target_user = user or user_factory()
-    
+
     return Cart(
         id=kwargs.get("id", uuid4()),
         user=target_user,
@@ -22,9 +22,7 @@ def cart_factory(user: User | None = None, **kwargs) -> Cart:
 
 
 def cart_item_factory(
-    cart: Cart | None = None, 
-    product: Product | None = None, 
-    **kwargs
+    cart: Cart | None = None, product: Product | None = None, **kwargs
 ) -> CartItem:
     target_product = product or product_factory()
     target_cart = cart or cart_factory()

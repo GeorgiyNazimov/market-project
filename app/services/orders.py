@@ -6,18 +6,18 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from app.core.exceptions import (
     AppException,
     BadRequest,
-    ForbiddenError,
     ConflictError,
+    ForbiddenError,
     NotFoundError,
 )
 from app.database.models.order_item import OrderItem
 from app.repositories.cart import delete_cart_items_repo, get_cart_items_by_ids_repo
 from app.repositories.orders import (
+    add_order_items_repo,
     create_order_repo,
     delete_order_repo,
     get_order_by_id_repo,
     get_orders_by_user_id_repo,
-    add_order_items_repo,
     update_order_total_price_repo,
 )
 from app.repositories.products import update_products_stock_repo
@@ -59,7 +59,7 @@ async def create_order_serv(
 ):
     if len(new_order_data.cart_item_ids) == 0:
         raise ForbiddenError("You must choose cart items")
-    
+
     owner_id = current_user.id
 
     cart_items = await get_cart_items_by_ids_repo(

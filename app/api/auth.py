@@ -4,8 +4,8 @@ from fastapi import APIRouter, Depends
 from fastapi.security import OAuth2PasswordRequestForm
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from app.api.dependencies import get_session, RoleChecker, settings
-from app.schemas.auth import UserCreateData, UserGetData, CurrentUserData
+from app.api.dependencies import RoleChecker, get_session, settings
+from app.schemas.auth import CurrentUserData, UserCreateData, UserGetData
 from app.services.auth import (
     authenticate_user,
     create_access_token,
@@ -25,9 +25,8 @@ async def login(
 
     access_token_expires = timedelta(minutes=settings.ACCESS_TOKEN_EXPIRE_MINUTES)
     access_token = create_access_token(
-        data={"sub": str(user.id),
-              "role": user.role},
-        expires_delta=access_token_expires
+        data={"sub": str(user.id), "role": user.role},
+        expires_delta=access_token_expires,
     )
     return {"access_token": access_token, "token_type": "bearer"}
 
@@ -35,7 +34,7 @@ async def login(
 @app.get("/users/me")
 async def read_users_me(
     current_user: CurrentUserData = Depends(RoleChecker(["user", "admin"])),
-    session: AsyncSession = Depends(get_session)
+    session: AsyncSession = Depends(get_session),
 ) -> UserGetData:
     user_data = await get_user_data(current_user, session)
     return user_data

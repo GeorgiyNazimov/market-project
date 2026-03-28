@@ -10,20 +10,19 @@ from app.core.exceptions import AuthenticationError, ForbiddenError
 from app.database.connection.session import _async_session_maker
 from app.schemas.auth import CurrentUserData
 
-
 oauth2_scheme = OAuth2PasswordBearer(
     tokenUrl=f"{get_settings().PATH_PREFIX}/auth/token"
 )
 
 settings = get_settings()
 
+
 async def get_session() -> AsyncGenerator[AsyncSession, None]:
     async with _async_session_maker() as session:
         yield session
 
-async def get_token_data(
-    token: str = Security(oauth2_scheme)
-) -> CurrentUserData:
+
+async def get_token_data(token: str = Security(oauth2_scheme)) -> CurrentUserData:
     try:
         payload = jwt.decode(
             token, settings.SECRET_KEY, algorithms=[settings.ALGORITHM]

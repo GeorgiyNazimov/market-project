@@ -5,24 +5,25 @@ Revises: a74d2cb02f7d
 Create Date: 2026-02-28 02:54:45.622524
 
 """
+
 from typing import Sequence, Union
 
+import sqlalchemy as sa
 from alembic import op
+
 from migrations.migration_utils import (
+    drop_constraint_safe,
+    drop_index_concurrently,
+    fmt_ck,
     fmt_ix,
-    is_column_not_null,
     get_constraint_status,
     get_index_status,
-    drop_index_concurrently,
-    drop_constraint_safe,
-    fmt_ck
+    is_column_not_null,
 )
-import sqlalchemy as sa
-
 
 # revision identifiers, used by Alembic.
-revision: str = '74dfd6ac44be'
-down_revision: Union[str, None] = 'a74d2cb02f7d'
+revision: str = "74dfd6ac44be"
+down_revision: Union[str, None] = "a74d2cb02f7d"
 branch_labels: Union[str, Sequence[str], None] = None
 depends_on: Union[str, Sequence[str], None] = None
 
@@ -32,6 +33,7 @@ DATA_MIGRATION_NAME = "2026_02_25_1908_set_default_roles_for_users.py"
 RAW_CONSTRAINT = f"check_{COLUMN}_not_null"
 DB_CONSTRAINT = fmt_ck(TABLE, RAW_CONSTRAINT)
 TMP_INDEX = fmt_ix(TABLE, [COLUMN, "nulls", "tmp"])
+
 
 def upgrade() -> None:
     conn = op.get_bind()
@@ -43,7 +45,7 @@ def upgrade() -> None:
         if idx_status == "invalid":
             drop_index_concurrently(TMP_INDEX)
             idx_status = "none"
-        
+
         if idx_status == "none":
             op.execute("COMMIT")
             op.execute(
@@ -54,7 +56,7 @@ def upgrade() -> None:
         has_nulls = conn.execute(
             sa.text(f"SELECT 1 FROM {TABLE} WHERE {COLUMN} IS NULL LIMIT 1")
         ).scalar()
-        
+
         if has_nulls:
             raise Exception(
                 f"\n[MIGRATION ERROR]: Найдено нарушение целостности данных в {TABLE}.{COLUMN}.\n"
@@ -66,7 +68,7 @@ def upgrade() -> None:
         if c_status == "none":
             op.execute(
                 f'ALTER TABLE {TABLE} ADD CONSTRAINT "{DB_CONSTRAINT}" '
-                f'CHECK ({COLUMN} IS NOT NULL) NOT VALID'
+                f"CHECK ({COLUMN} IS NOT NULL) NOT VALID"
             )
             op.execute("COMMIT")
             c_status = "not_validated"
@@ -79,6 +81,7 @@ def upgrade() -> None:
 
     drop_constraint_safe(TABLE, DB_CONSTRAINT)
     drop_index_concurrently(TMP_INDEX)
+
 
 def downgrade() -> None:
     op.alter_column(TABLE, COLUMN, nullable=True)
