@@ -2,8 +2,8 @@ from datetime import datetime
 from uuid import uuid4
 
 from app.database.models.user import User
-from app.schemas.auth import UserCreateData
-from app.services.auth import get_password_hash
+from app.schemas.user import UserCreateData
+from app.services.user import get_password_hash
 
 
 def user_factory(

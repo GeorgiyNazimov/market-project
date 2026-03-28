@@ -1,4 +1,4 @@
-from app.api.auth import app as auth_router
+from app.api.users import app as auth_router
 from app.api.cart import app as cart_router
 from app.api.orders import app as order_router
 from app.api.products import app as product_router

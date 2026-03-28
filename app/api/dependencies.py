@@ -8,7 +8,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from app.config.default import get_settings
 from app.core.exceptions import AuthenticationError, ForbiddenError
 from app.database.connection.session import _async_session_maker
-from app.schemas.auth import CurrentUserData
+from app.schemas.user import CurrentUserData
 
 oauth2_scheme = OAuth2PasswordBearer(
     tokenUrl=f"{get_settings().PATH_PREFIX}/auth/token"

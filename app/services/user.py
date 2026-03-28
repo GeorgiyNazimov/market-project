@@ -7,14 +7,14 @@ from sqlalchemy.exc import IntegrityError
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.api.dependencies import settings
-from app.core.exceptions import AuthenticationError, ConflictError
+from app.core.exceptions import AuthenticationError, ConflictError, NotFoundError
 from app.database.models.user import User
-from app.repositories.auth import (
-    create_user_in_db,
-    get_user_from_db_by_email,
-    get_user_from_db_by_id,
+from app.repositories.user import (
+    create_user_repo,
+    get_user_by_email_repo,
+    get_user_by_id_repo,
 )
-from app.schemas.auth import CurrentUserData, UserCreateData, UserGetData
+from app.schemas.user import CurrentUserData, Token, UserCreateData, UserGetData
 
 # Контекст для хеширования паролей
 pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
@@ -28,15 +28,22 @@ def get_password_hash(password):
     return pwd_context.hash(password)
 
 
-async def authenticate_user(
-    authData: OAuth2PasswordRequestForm, session: AsyncSession
-) -> User:
-    user = await get_user_from_db_by_email(authData.username, session)
+async def login_serv(
+    auth_data: OAuth2PasswordRequestForm, session: AsyncSession
+) -> Token:
+    user = await get_user_by_email_repo(auth_data.username, session)
+
     if not user:
         raise AuthenticationError("Invalid credential")
-    if not verify_password(authData.password, user.password_hash):
+    if not verify_password(auth_data.password, user.password_hash):
         raise AuthenticationError("Invalid credential")
-    return user
+
+    access_token_expires = timedelta(minutes=settings.ACCESS_TOKEN_EXPIRE_MINUTES)
+    access_token = create_access_token(
+        data={"sub": str(user.id), "role": user.role},
+        expires_delta=access_token_expires,
+    )
+    return Token(access_token=access_token, token_type="bearer")
 
 
 def create_access_token(data: dict, expires_delta: timedelta = None):
@@ -46,10 +53,10 @@ def create_access_token(data: dict, expires_delta: timedelta = None):
     return jwt.encode(to_encode, settings.SECRET_KEY, algorithm=settings.ALGORITHM)
 
 
-async def create_user(userData: UserCreateData, session: AsyncSession) -> User:
+async def create_user_serv(user_data: UserCreateData, session: AsyncSession) -> User:
     try:
-        userData.password = get_password_hash(userData.password)
-        new_user = await create_user_in_db(userData, session)
+        user_data.password = get_password_hash(user_data.password)
+        new_user = await create_user_repo(user_data, session)
         await session.commit()
     except IntegrityError as e:
         await session.rollback()
@@ -57,8 +64,10 @@ async def create_user(userData: UserCreateData, session: AsyncSession) -> User:
     return new_user
 
 
-async def get_user_data(
+async def get_user_data_serv(
     current_user: CurrentUserData, session: AsyncSession
 ) -> UserGetData:
-    user = await get_user_from_db_by_id(current_user.id, session)
+    user = await get_user_by_id_repo(current_user.id, session)
+    if not user:
+        raise NotFoundError("User not found")
     return UserGetData.model_validate(user)

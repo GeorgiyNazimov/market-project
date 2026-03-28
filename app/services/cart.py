@@ -11,7 +11,7 @@ from app.repositories.cart import (
     insert_cart_item,
     update_cart_item_quantity_in_db,
 )
-from app.schemas.auth import CurrentUserData
+from app.schemas.user import CurrentUserData
 from app.schemas.cart import (
     CartItemData,
     CartItemList,

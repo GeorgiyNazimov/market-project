@@ -9,7 +9,7 @@ from app.database.models.cart import Cart
 from app.database.models.cart_item import CartItem
 from app.database.models.product import Product
 from app.database.models.user import User
-from app.schemas.auth import CurrentUserData
+from app.schemas.user import CurrentUserData
 from app.schemas.cart import UpdateCartItemData
 
 

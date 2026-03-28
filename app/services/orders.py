@@ -21,7 +21,7 @@ from app.repositories.orders import (
     update_order_total_price_repo,
 )
 from app.repositories.products import update_products_stock_repo
-from app.schemas.auth import CurrentUserData
+from app.schemas.user import CurrentUserData
 from app.schemas.orders import OrderCreate, OrderListRead, OrderRead
 
 

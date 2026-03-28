@@ -3,8 +3,8 @@ from sqlalchemy import select
 from sqlalchemy.exc import IntegrityError
 
 from app.database.models.user import User
-from app.repositories.auth import create_user_in_db, get_user_from_db_by_email
-from app.services.auth import get_password_hash
+from app.repositories.user import create_user_repo, get_user_by_email_repo
+from app.services.user import get_password_hash
 from tests.factories.users import new_user_data_factory, user_factory
 
 
@@ -13,7 +13,7 @@ async def test_create_user_unique_email(db_session):
     new_user = new_user_data_factory()
     new_user.password = get_password_hash(new_user.password)
 
-    await create_user_in_db(new_user, db_session)
+    await create_user_repo(new_user, db_session)
 
     user_from_db = (await db_session.execute(select(User))).scalar_one()
     assert user_from_db.email == new_user.email
@@ -27,10 +27,10 @@ async def test_create_user_same_email(db_session):
     new_user2 = new_user_data_factory(email="same_email@domain.com")
     new_user2.password = get_password_hash(new_user2.password)
 
-    await create_user_in_db(new_user1, db_session)
+    await create_user_repo(new_user1, db_session)
     await db_session.flush()
     with pytest.raises(IntegrityError):
-        await create_user_in_db(new_user2, db_session)
+        await create_user_repo(new_user2, db_session)
         await db_session.flush()
 
 
@@ -40,7 +40,7 @@ async def test_get_user(db_session):
     db_session.add(new_user)
     await db_session.flush()
 
-    user_from_db = await get_user_from_db_by_email(new_user.email, db_session)
+    user_from_db = await get_user_by_email_repo(new_user.email, db_session)
 
     assert user_from_db.email == new_user.email
     assert user_from_db.password_hash == new_user.password_hash

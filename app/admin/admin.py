@@ -4,8 +4,8 @@ from sqladmin.authentication import AuthenticationBackend
 from starlette.requests import Request
 
 from app.api.dependencies import get_session
-from app.repositories.auth import get_user_from_db_by_email
-from app.services.auth import verify_password
+from app.repositories.user import get_user_by_email_repo
+from app.services.user import verify_password
 
 
 class AdminAuth(AuthenticationBackend):
@@ -15,7 +15,7 @@ class AdminAuth(AuthenticationBackend):
         password = form.get("password")
 
         async with asynccontextmanager(get_session)() as session:
-            user = await get_user_from_db_by_email(email, session)
+            user = await get_user_by_email_repo(email, session)
             if not user:
                 return False
             if not verify_password(password, user.password_hash):
