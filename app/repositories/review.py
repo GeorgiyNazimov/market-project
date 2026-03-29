@@ -6,21 +6,21 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.database.models.review import Review
 from app.database.models.user import User
-from app.schemas.user import CurrentUserData
+from app.schemas.user import UserTokenData
 from app.schemas.review import NewReviewData
 
 
 async def create_product_review_db(
     product_id: UUID,
     reviewData: NewReviewData,
-    current_user: CurrentUserData,
+    token_data: UserTokenData,
     session: AsyncSession,
 ):
     new_review = Review(
         text=reviewData.text,
         product_rating=reviewData.product_rating,
         product_id=product_id,
-        user_id=current_user.id,
+        user_id=token_data.id,
     )
     session.add(new_review)
 

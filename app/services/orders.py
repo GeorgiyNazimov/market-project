@@ -21,15 +21,15 @@ from app.repositories.orders import (
     update_order_total_price_repo,
 )
 from app.repositories.products import update_products_stock_repo
-from app.schemas.user import CurrentUserData
+from app.schemas.user import UserTokenData
 from app.schemas.orders import OrderCreate, OrderListRead, OrderRead
 
 
 async def get_orders_by_user_id_serv(
-    target_user_id: UUID | None, current_user: CurrentUserData, session: AsyncSession
+    target_user_id: UUID | None, token_data: UserTokenData, session: AsyncSession
 ):
-    owner_id = target_user_id or current_user.id
-    if current_user.role != "admin" and current_user.id != owner_id:
+    owner_id = target_user_id or token_data.id
+    if token_data.role != "admin" and token_data.id != owner_id:
         raise ForbiddenError("You can only view your own orders")
     orders_list = await get_orders_by_user_id_repo(owner_id, session)
     return OrderListRead(
@@ -55,12 +55,12 @@ def _validate_product_stock(items_to_check: list[dict]):
 
 
 async def create_order_serv(
-    new_order_data: OrderCreate, current_user: CurrentUserData, session: AsyncSession
+    new_order_data: OrderCreate, token_data: UserTokenData, session: AsyncSession
 ):
     if len(new_order_data.cart_item_ids) == 0:
         raise ForbiddenError("You must choose cart items")
 
-    owner_id = current_user.id
+    owner_id = token_data.id
 
     cart_items = await get_cart_items_by_ids_repo(
         new_order_data.cart_item_ids, owner_id, session
@@ -125,9 +125,9 @@ async def create_order_serv(
 
 
 async def delete_order_serv(
-    order_id: UUID, current_user: CurrentUserData, session: AsyncSession
+    order_id: UUID, token_data: UserTokenData, session: AsyncSession
 ):
-    owner_id = None if current_user.role == "admin" else current_user.id
+    owner_id = None if token_data.role == "admin" else token_data.id
 
     order = await get_order_by_id_repo(order_id, owner_id, session)
     if order is None:
