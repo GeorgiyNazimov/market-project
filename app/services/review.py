@@ -10,18 +10,18 @@ from app.repositories.review import (
     create_product_review_db,
     get_product_reviews_list_db,
 )
-from app.schemas.user import CurrentUserData
+from app.schemas.user import UserTokenData
 from app.schemas.review import NewReviewData, NextCursorData, ReviewData, ReviewDataList
 
 
 async def create_product_review(
     product_id: UUID,
     reviewData: NewReviewData,
-    current_user: CurrentUserData,
+    token_data: UserTokenData,
     session: AsyncSession,
 ):
     try:
-        await create_product_review_db(product_id, reviewData, current_user, session)
+        await create_product_review_db(product_id, reviewData, token_data, session)
 
         rating = reviewData.product_rating
         await update_product_average_rating(product_id, rating, session)

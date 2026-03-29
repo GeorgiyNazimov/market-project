@@ -14,7 +14,7 @@ from app.repositories.user import (
     get_user_by_email_repo,
     get_user_by_id_repo,
 )
-from app.schemas.user import CurrentUserData, Token, UserCreateData, UserGetData
+from app.schemas.user import UserTokenData, Token, UserCreateData, UserGetData
 
 # Контекст для хеширования паролей
 pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
@@ -65,9 +65,9 @@ async def create_user_serv(user_data: UserCreateData, session: AsyncSession) -> 
 
 
 async def get_user_data_serv(
-    current_user: CurrentUserData, session: AsyncSession
+    token_data: UserTokenData, session: AsyncSession
 ) -> UserGetData:
-    user = await get_user_by_id_repo(current_user.id, session)
+    user = await get_user_by_id_repo(token_data.id, session)
     if not user:
         raise NotFoundError("User not found")
     return UserGetData.model_validate(user)

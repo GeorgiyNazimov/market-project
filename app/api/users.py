@@ -3,7 +3,7 @@ from fastapi.security import OAuth2PasswordRequestForm
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.api.dependencies import get_session, get_token_data
-from app.schemas.user import CurrentUserData, Token, UserCreateData, UserGetData
+from app.schemas.user import UserTokenData, Token, UserCreateData, UserGetData
 from app.services.user import (
     login_serv,
     create_user_serv,
@@ -24,10 +24,10 @@ async def login_handler(
 
 @app.get("/me")
 async def get_user_data_handler(
-    current_user: CurrentUserData = Depends(get_token_data),
+    token_data: UserTokenData = Depends(get_token_data),
     session: AsyncSession = Depends(get_session),
 ) -> UserGetData:
-    user_data = await get_user_data_serv(current_user, session)
+    user_data = await get_user_data_serv(token_data, session)
     return user_data
 
 

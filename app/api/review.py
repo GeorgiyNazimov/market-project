@@ -5,7 +5,7 @@ from fastapi import APIRouter, Depends, Query
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.api.dependencies import RoleChecker, get_session
-from app.schemas.user import CurrentUserData
+from app.schemas.user import UserTokenData
 from app.schemas.review import NewReviewData, ReviewDataList
 from app.services.review import create_product_review, get_product_reviews_list
 
@@ -30,7 +30,7 @@ async def get_product_reviews_list_handler(
 async def create_product_review_handler(
     product_id: UUID,
     reviewData: NewReviewData,
-    current_user: CurrentUserData = Depends(RoleChecker(["user"])),
+    token_data: UserTokenData = Depends(RoleChecker(["user"])),
     session: AsyncSession = Depends(get_session),
 ):
-    await create_product_review(product_id, reviewData, current_user, session)
+    await create_product_review(product_id, reviewData, token_data, session)

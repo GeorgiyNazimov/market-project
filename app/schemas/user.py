@@ -23,7 +23,7 @@ class UserGetData(BaseModel):
     model_config = ConfigDict(from_attributes=True)
 
 
-class CurrentUserData(BaseModel):
+class UserTokenData(BaseModel):
     id: UUID = Field(alias="sub")
     role: SafeRole
     exp: datetime

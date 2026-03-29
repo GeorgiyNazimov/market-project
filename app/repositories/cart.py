@@ -9,21 +9,21 @@ from app.database.models.cart import Cart
 from app.database.models.cart_item import CartItem
 from app.database.models.product import Product
 from app.database.models.user import User
-from app.schemas.user import CurrentUserData
+from app.schemas.user import UserTokenData
 from app.schemas.cart import UpdateCartItemData
 
 
-async def get_cart(current_user: CurrentUserData, session: AsyncSession):
+async def get_cart(token_data: UserTokenData, session: AsyncSession):
     # В большинстве случаев get_cart вызывается для просмотра товаров в
     # корзине или для добавления новых товаров, что означает, что функция завершается
     # после первого быстрого SELECT. INSERT через session.add выполняется
     # редко, и ещё реже — при параллельных запросах срабатывает «страховочный» SELECT.
 
     cart = (
-        await session.execute(select(Cart).where(Cart.user_id == current_user.id))
+        await session.execute(select(Cart).where(Cart.user_id == token_data.id))
     ).scalar()
     if not cart:
-        cart = Cart(user_id=current_user.id)
+        cart = Cart(user_id=token_data.id)
         session.add(cart)
         try:
             await session.flush()
@@ -31,14 +31,14 @@ async def get_cart(current_user: CurrentUserData, session: AsyncSession):
             await session.rollback()
             cart = (
                 await session.execute(
-                    select(Cart).where(Cart.user_id == current_user.id)
+                    select(Cart).where(Cart.user_id == token_data.id)
                 )
             ).scalar_one()
     return cart
 
 
-async def get_cart_items_from_db(current_user: CurrentUserData, session: AsyncSession):
-    cart = await get_cart(current_user, session)
+async def get_cart_items_from_db(token_data: UserTokenData, session: AsyncSession):
+    cart = await get_cart(token_data, session)
     cart_items = (
         await session.execute(
             select(
@@ -57,9 +57,9 @@ async def get_cart_items_from_db(current_user: CurrentUserData, session: AsyncSe
 
 
 async def insert_cart_item(
-    product_id: UUID, current_user: CurrentUserData, session: AsyncSession
+    product_id: UUID, token_data: UserTokenData, session: AsyncSession
 ):
-    cart = await get_cart(current_user, session)
+    cart = await get_cart(token_data, session)
 
     new_cart_item = CartItem(cart_id=cart.id, product_id=product_id)
 
@@ -95,8 +95,8 @@ async def delete_cart_item_from_db(cart_item_id: UUID, session: AsyncSession):
     await session.execute(delete(CartItem).where(CartItem.id == cart_item_id))
 
 
-async def delete_cart_from_db(current_user: CurrentUserData, session: AsyncSession):
-    await session.execute(delete(Cart).where(Cart.user_id == current_user.id))
+async def delete_cart_from_db(token_data: UserTokenData, session: AsyncSession):
+    await session.execute(delete(Cart).where(Cart.user_id == token_data.id))
 
 
 async def get_cart_items_by_ids_repo(
