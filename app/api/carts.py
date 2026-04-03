@@ -7,59 +7,60 @@ from app.api.dependencies import RoleChecker, get_session
 from app.schemas.user import UserTokenData
 from app.schemas.cart import CartItemList, NewCartItemData, UpdateCartItemData
 from app.services.cart import (
-    add_product_in_cart,
-    delete_cart,
-    delete_cart_item,
-    get_all_cart_items,
-    update_cart_item_quantity,
+    create_cart_item_serv,
+    delete_cart_serv,
+    delete_cart_item_serv,
+    get_cart_items_serv,
+    update_cart_item_quantity_serv,
 )
 
-app = APIRouter(prefix="/cart", tags=["Cart"])
+app = APIRouter(prefix="/carts", tags=["Carts"])
 
 
 @app.get("/")
-async def get_all_cart_items_handler(
+async def get_cart_items_handler(
+    target_user_id: UUID | None = None,
     token_data: UserTokenData = Depends(RoleChecker(["user", "admin"])),
     session: AsyncSession = Depends(get_session),
 ) -> CartItemList:
-    my_cart_items = await get_all_cart_items(token_data, session)
+    my_cart_items = await get_cart_items_serv(target_user_id, token_data, session)
     return my_cart_items
 
 
-@app.patch("/update_cartitem")
+@app.patch("/update_cart_item")
 async def update_cart_item_quantity_handler(
     update_cartitem_data: UpdateCartItemData,
-    token_data: UserTokenData = Depends(RoleChecker(["user", "admin"])),
+    token_data: UserTokenData = Depends(RoleChecker(["user"])),
     session: AsyncSession = Depends(get_session),
 ):
-    await update_cart_item_quantity(update_cartitem_data, session)
+    await update_cart_item_quantity_serv(update_cartitem_data, token_data, session)
     return "Successful update"
 
 
-@app.post("/create_cartitem/{product_id}")
-async def add_product_in_cart_handler(
+@app.post("/create_cart_item/{product_id}")
+async def create_cart_item_handler(
     product_id: UUID,
+    token_data: UserTokenData = Depends(RoleChecker(["user"])),
     session: AsyncSession = Depends(get_session),
-    token_data: UserTokenData = Depends(RoleChecker(["user", "admin"])),
 ) -> NewCartItemData:
-    new_cart_item = await add_product_in_cart(product_id, token_data, session)
+    new_cart_item = await create_cart_item_serv(product_id, token_data, session)
     return new_cart_item
 
 
-@app.delete("/delete_cartitem/{cart_item_id}")
+@app.delete("/delete_cart_item/{cart_item_id}")
 async def delete_cart_item_handler(
     cart_item_id: UUID,
-    token_data: UserTokenData = Depends(RoleChecker(["user", "admin"])),
+    token_data: UserTokenData = Depends(RoleChecker(["user"])),
     session: AsyncSession = Depends(get_session),
 ):
-    await delete_cart_item(cart_item_id, session)
+    await delete_cart_item_serv(cart_item_id, token_data, session)
     return "Successful delete"
 
 
 @app.delete("/delete_my_cart")
 async def delete_cart_handler(
-    token_data: UserTokenData = Depends(RoleChecker(["user", "admin"])),
+    token_data: UserTokenData = Depends(RoleChecker(["user"])),
     session: AsyncSession = Depends(get_session),
 ):
-    await delete_cart(token_data, session)
+    await delete_cart_serv(token_data, session)
     return "Successful delete"

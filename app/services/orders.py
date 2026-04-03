@@ -11,7 +11,10 @@ from app.core.exceptions import (
     NotFoundError,
 )
 from app.database.models.order_item import OrderItem
-from app.repositories.cart import delete_cart_items_repo, get_cart_items_by_ids_repo
+from app.repositories.cart import (
+    delete_cart_items_by_ids_repo,
+    get_cart_items_by_ids_repo,
+)
 from app.repositories.orders import (
     add_order_items_repo,
     create_order_repo,
@@ -105,7 +108,9 @@ async def create_order_serv(
 
         await add_order_items_repo(order_items, session)
         await update_order_total_price_repo(new_order.id, total_price, session)
-        await delete_cart_items_repo(new_order_data.cart_item_ids, owner_id, session)
+        await delete_cart_items_by_ids_repo(
+            new_order_data.cart_item_ids, owner_id, session
+        )
         await update_products_stock_repo(stock_update_data, session)
 
         new_order = await get_order_by_id_repo(new_order.id, owner_id, session)
