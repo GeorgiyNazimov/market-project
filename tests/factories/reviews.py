@@ -4,7 +4,7 @@ from uuid import uuid4
 from app.database.models.product import Product
 from app.database.models.review import Review
 from app.database.models.user import User
-from app.schemas.review import NewReviewData
+from app.schemas.products import NewReviewData
 from tests.factories.products import product_factory
 from tests.factories.users import user_factory
 

@@ -2,13 +2,11 @@ from app.api.users import app as auth_router
 from app.api.carts import app as cart_router
 from app.api.orders import app as order_router
 from app.api.products import app as product_router
-from app.api.review import app as review_router
 
 list_of_routers = [
     auth_router,
     product_router,
     cart_router,
-    review_router,
     order_router,
 ]
 

@@ -6,8 +6,8 @@ from pydantic import BaseModel, ConfigDict
 
 
 class NextCursorData(BaseModel):
-    created_at: datetime
-    id: UUID
+    created_at: datetime | None
+    id: UUID | None
 
 
 class ShortProductRatingData(BaseModel):
@@ -63,3 +63,23 @@ class NewProductData(BaseModel):
     name: str
     price: float
     stock: int
+
+
+class NewReviewData(BaseModel):
+    text: str
+    product_rating: int
+
+
+class ReviewData(BaseModel):
+    created_at: datetime
+    first_name: str | None
+    last_name: str | None
+    text: str
+    product_rating: int
+
+    model_config = ConfigDict(from_attributes=True)
+
+
+class ReviewDataList(BaseModel):
+    reviews_list: List[ReviewData]
+    next_cursor: NextCursorData

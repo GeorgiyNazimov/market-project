@@ -9,10 +9,13 @@ from sqlalchemy.orm import joinedload, selectinload
 
 from app.database.models.product import Product
 from app.database.models.product_avg_rating import ProductAverageRating
-from app.schemas.products import NewProductData
+from app.database.models.review import Review
+from app.database.models.user import User
+from app.schemas.products import NewProductData, NewReviewData
+from app.schemas.user import UserTokenData
 
 
-async def get_product_list_from_db(
+async def get_product_list_repo(
     created_at_cursor: datetime | None,
     id_cursor: UUID | None,
     limit: int,
@@ -28,7 +31,7 @@ async def get_product_list_from_db(
 
     results = (await session.execute(stmt)).scalars().all()
 
-    next_cursor = None
+    next_cursor = {"created_at": None, "id": None}
     if results:
         last = results[-1]
         next_cursor = {"created_at": last.created_at, "id": last.id}
@@ -36,7 +39,7 @@ async def get_product_list_from_db(
     return results, next_cursor
 
 
-async def get_product_data_from_db(product_id: UUID, session: AsyncSession):
+async def get_product_data_repo(product_id: UUID, session: AsyncSession):
     product = (
         await session.execute(
             select(Product)
@@ -47,7 +50,7 @@ async def get_product_data_from_db(product_id: UUID, session: AsyncSession):
     return product
 
 
-async def update_product_average_rating(
+async def update_product_average_rating_repo(
     product_id: UUID, rating: int, session: AsyncSession
 ):
 
@@ -126,3 +129,53 @@ async def get_random_product(session: AsyncSession):
         await session.execute(select(Product).offset(offset).limit(1))
     ).scalar_one_or_none()
     return product
+
+async def create_product_review_repo(
+    product_id: UUID,
+    reviewData: NewReviewData,
+    token_data: UserTokenData,
+    session: AsyncSession,
+):
+    new_review = Review(
+        text=reviewData.text,
+        product_rating=reviewData.product_rating,
+        product_id=product_id,
+        user_id=token_data.id,
+    )
+    session.add(new_review)
+
+
+async def get_product_reviews_list_repo(
+    product_id: UUID,
+    created_at_cursor: datetime | None,
+    id_cursor: UUID | None,
+    limit: int,
+    session: AsyncSession,
+):
+    stmt = (
+        select(
+            Review.id,
+            Review.text,
+            Review.created_at,
+            Review.product_rating,
+            User.first_name,
+            User.last_name,
+        )
+        .join(User, Review.user_id == User.id)
+        .where(Review.product_id == product_id)
+    )
+
+    if created_at_cursor and id_cursor:
+        stmt = stmt.where(
+            tuple_(Review.created_at, Review.id) < (created_at_cursor, id_cursor)
+        )
+
+    stmt = stmt.order_by(Review.created_at.desc(), Review.id.desc()).limit(limit)
+
+    results = (await session.execute(stmt)).all()
+    next_cursor = {"created_at": None, "id": None}
+    if results:
+        last = results[-1]
+        next_cursor = {"created_at": last.created_at, "id": last.id}
+
+    return results, next_cursor
