@@ -60,3 +60,23 @@ def drop_index_concurrently(index_name: str):
 
 def drop_constraint_safe(table: str, constraint: str):
     op.execute(f'ALTER TABLE {table} DROP CONSTRAINT IF EXISTS "{constraint}"')
+
+
+def create_index_concurrently(table_name: str, index_name: str, columns: list[str]):
+    op.execute("COMMIT")
+    cols_str = ", ".join(columns)
+    op.execute(
+        f"CREATE INDEX CONCURRENTLY IF NOT EXISTS {index_name} "
+        f"ON {table_name} ({cols_str})"
+    )
+
+
+def create_unique_index_concurrently(
+    table_name: str, index_name: str, columns: list[str]
+):
+    op.execute("COMMIT")
+    cols_str = ", ".join(columns)
+    op.execute(
+        f"CREATE UNIQUE INDEX CONCURRENTLY IF NOT EXISTS {index_name} "
+        f"ON {table_name} ({cols_str})"
+    )

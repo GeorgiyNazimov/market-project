@@ -1,20 +1,20 @@
-from datetime import datetime
+from datetime import datetime, timedelta
 from uuid import uuid4
 
 from app.database.models.user import User
-from app.schemas.user import UserCreateData
+from app.schemas.user import UserCreateData, UserTokenData
 from app.services.user import get_password_hash
 
 
 def user_factory(
     email: str | None = None,
-    password="password",
+    password: str = "password",
     **kwargs,
 ) -> User:
     email = email or f"{uuid4()}@domain.com"
     return User(
         id=kwargs.get("id", uuid4()),
-        email=email,
+        email=email if email is not None else f"{uuid4()}@domain.com",
         first_name=kwargs.get("first_name", "first_name"),
         last_name=kwargs.get("last_name", "last_name"),
         role=kwargs.get("role", "user"),
@@ -24,7 +24,22 @@ def user_factory(
 
 
 def new_user_data_factory(
-    email=f"{uuid4()}@domain.com",
-    password="password",
+    email: str | None = None,
+    password: str = "password",
 ) -> UserCreateData:
-    return UserCreateData(email=email, password=password)
+    return UserCreateData(
+        email=email if email is not None else f"{uuid4()}@domain.com",
+        password=password,
+    )
+
+
+def token_data_factory(
+    user: User | None = None,
+    exp: datetime | None = None,
+):
+    user = user or user_factory()
+    return UserTokenData(
+        sub=user.id,
+        role=user.role,
+        exp=exp if exp is not None else datetime.utcnow() + timedelta(minutes=30),
+    )

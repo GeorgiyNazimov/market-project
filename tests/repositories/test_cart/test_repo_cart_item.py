@@ -8,8 +8,8 @@ from app.repositories.cart import (
     create_cart_item_repo,
     delete_cart_item_repo,
     delete_cart_items_by_ids_repo,
-    get_cart_items_by_user_id_repo,
     get_cart_items_by_ids_repo,
+    get_cart_items_by_user_id_repo,
     update_cart_item_quantity_repo,
 )
 from tests.factories.cart import (

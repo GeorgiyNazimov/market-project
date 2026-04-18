@@ -23,7 +23,7 @@ from app.repositories.orders import (
     get_orders_by_user_id_repo,
     update_order_total_price_repo,
 )
-from app.repositories.products import update_products_stock_repo
+from app.repositories.product import update_products_stock_repo
 from app.schemas.user import UserTokenData
 from app.schemas.orders import OrderCreate, OrderListRead, OrderRead
 

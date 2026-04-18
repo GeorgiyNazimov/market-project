@@ -5,11 +5,6 @@ from uuid import UUID
 from pydantic import BaseModel, ConfigDict
 
 
-class NextCursorData(BaseModel):
-    created_at: datetime | None
-    id: UUID | None
-
-
 class ShortProductRatingData(BaseModel):
     avg_rating: float
     rating_count: int
@@ -31,7 +26,7 @@ class ShortProductData(BaseModel):
 
 class ShortProductDataList(BaseModel):
     product_list: List[ShortProductData]
-    next_cursor: NextCursorData
+    next_cursor: str | None
 
 
 class ProductRatingData(BaseModel):
@@ -70,10 +65,17 @@ class NewReviewData(BaseModel):
     product_rating: int
 
 
-class ReviewData(BaseModel):
-    created_at: datetime
+class ReviewUserData(BaseModel):
     first_name: str | None
     last_name: str | None
+
+    model_config = ConfigDict(from_attributes=True)
+
+
+class ReviewData(BaseModel):
+    id: UUID
+    created_at: datetime
+    user: ReviewUserData
     text: str
     product_rating: int
 
@@ -81,5 +83,5 @@ class ReviewData(BaseModel):
 
 
 class ReviewDataList(BaseModel):
-    reviews_list: List[ReviewData]
-    next_cursor: NextCursorData
+    review_list: List[ReviewData]
+    next_cursor: str | None

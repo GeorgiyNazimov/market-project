@@ -4,8 +4,8 @@ from fastapi import APIRouter, Depends
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.api.dependencies import RoleChecker, get_session
-from app.schemas.user import UserTokenData
 from app.schemas.orders import OrderCreate, OrderListRead, OrderRead
+from app.schemas.user import UserTokenData
 from app.services.orders import (
     create_order_serv,
     delete_order_serv,

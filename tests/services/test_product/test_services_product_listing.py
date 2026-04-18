@@ -1,87 +1,138 @@
+from datetime import datetime, timedelta
+
 import pytest
 
-from app.services.products import get_product_list_serv, get_product_reviews_list_serv
-from tests.factories.products import multiple_products_factory, product_factory
+from app.core.exceptions import BadRequest
+from app.database.models.product import Product
+from app.database.models.review import Review
+from app.services.product import get_product_list_serv, get_product_review_list_serv
+from tests.factories.products import multiple_products_factory, pagination_params_factory, product_factory
 from tests.factories.reviews import review_factory
 
 
 @pytest.mark.asyncio
-async def test_get_product_list_without_cursor(db_session):
-    new_products = multiple_products_factory(4)
-    db_session.add_all(new_products)
+async def test_get_product_list_serv_without_cursor_success(db_session):
+    products = multiple_products_factory(6)
+    db_session.add_all(products)
     await db_session.flush()
-    new_products.sort(key=lambda x: (x.created_at, x.id), reverse=True)
 
-    products = await get_product_list_serv(None, None, limit=2, session=db_session)
+    products.sort(key=lambda x: (x.created_at, x.id), reverse=True)
+    expected_ids = [p.id for p in products]
 
-    assert len(products.product_list) == 2
-    assert products.product_list[-1].id == new_products[1].id
-    assert products.product_list[-1].created_at == new_products[1].created_at
-    assert products.next_cursor.id == new_products[1].id
-    assert products.next_cursor.created_at == new_products[1].created_at
+    db_session.expunge_all()
+
+    limit = 2
+    pagination_params = pagination_params_factory(limit=limit)
+    product_data_list = await get_product_list_serv(
+        pagination_params, db_session
+    )
+
+    assert len(product_data_list.product_list) == limit
+    for i in range(limit):
+        assert product_data_list.product_list[i].id == expected_ids[i]
 
 
 @pytest.mark.asyncio
-async def test_get_product_list_with_cursor(db_session):
-    new_products = multiple_products_factory(4)
-    db_session.add_all(new_products)
-    await db_session.flush()
-    new_products.sort(key=lambda x: (x.created_at, x.id), reverse=True)
-    products = await get_product_list_serv(None, None, limit=2, session=db_session)
-
-    products = await get_product_list_serv(
-        products.next_cursor.created_at, products.next_cursor.id, 2, db_session
-    )
-
-    assert len(products.product_list) == 2
-    assert products.product_list[-1].id == new_products[3].id
-    assert products.product_list[-1].created_at == new_products[3].created_at
-    assert products.next_cursor.id == new_products[3].id
-    assert products.next_cursor.created_at == new_products[3].created_at
-
-
-limit = 4
-
-@pytest.mark.asyncio
-async def test_get_product_reviews_without_cursor(db_session):
-    new_product = product_factory()
-    db_session.add(new_product)
-    new_reviews = [review_factory(product=new_product) for i in range(limit)]
-    new_reviews.sort(key=lambda x: (x.created_at, x.id), reverse=True)
-    db_session.add_all(new_reviews)
+async def test_get_product_list_serv_pagination_success(db_session):
+    products = multiple_products_factory(6)
+    db_session.add_all(products)
     await db_session.flush()
 
-    review_data_list = await get_product_reviews_list_serv(
-        new_product.id, None, None, limit / 2, db_session
-    )
+    products.sort(key=lambda x: (x.created_at, x.id), reverse=True)
+    expected_ids = [p.id for p in products]
 
-    assert (
-        review_data_list.reviews_list[-1].created_at
-        == new_reviews[(limit // 2) - 1].created_at
-    )
+    limit = 2
+    pagination_params = pagination_params_factory(limit=limit)
+    for i in range(3):
+        db_session.expunge_all()
+        product_data_list = await get_product_list_serv(
+            pagination_params, db_session
+        )
+        pagination_params.cursor = product_data_list.next_cursor
+
+        assert len(product_data_list.product_list) == limit
+        for j in range(limit):
+            assert product_data_list.product_list[j].id == expected_ids[j + limit * i]
 
 
 @pytest.mark.asyncio
-async def test_get_product_reviews_with_cursor(db_session):
-    new_product = product_factory()
-    db_session.add(new_product)
-    new_reviews = [review_factory(product=new_product) for i in range(limit)]
-    new_reviews.sort(key=lambda x: (x.created_at, x.id), reverse=True)
-    db_session.add_all(new_reviews)
+async def test_get_product_list_serv_unsupported_sort_field_bad_request_error(
+    db_session,
+):
+    limit = 2
+    pagination_params = pagination_params_factory(sort_by="random_field", limit=limit)
+    with pytest.raises(BadRequest):
+        await get_product_list_serv(pagination_params, db_session)
+
+
+@pytest.mark.asyncio
+async def test_get_product_review_list_serv_without_cursor_success(db_session):
+    product = product_factory()
+    reviews = [
+        review_factory(
+            product=product, created_at=datetime.utcnow() + timedelta(minutes=i)
+        )
+        for i in range(6)
+    ]
+    db_session.add_all([product, *reviews])
     await db_session.flush()
-    review_data_list = await get_product_reviews_list_serv(
-        new_product.id, None, None, limit / 2, db_session
+
+    reviews.sort(key=lambda x: (x.created_at, x.id), reverse=True)
+    expected_ids = [r.id for r in reviews]
+
+    db_session.expunge_all()
+
+    limit = 2
+    pagination_params = pagination_params_factory(limit=limit)
+    review_data_list = await get_product_review_list_serv(
+        product.id, pagination_params, db_session
     )
 
-    review_data_list = await get_product_reviews_list_serv(
-        new_product.id,
-        review_data_list.next_cursor.created_at,
-        review_data_list.next_cursor.id,
-        limit / 2,
-        db_session,
-    )
+    assert len(review_data_list.review_list) == limit
+    for i in range(limit):
+        assert review_data_list.review_list[i].id == expected_ids[i]
 
-    assert (
-        review_data_list.reviews_list[-1].created_at
-        == new_reviews[limit - 1].created_at
-    )
+
+@pytest.mark.asyncio
+async def test_get_product_review_list_serv_pagination_success(db_session):
+    product = product_factory()
+    reviews = [
+        review_factory(
+            product=product, created_at=datetime.utcnow() + timedelta(minutes=i)
+        )
+        for i in range(6)
+    ]
+    db_session.add_all([product, *reviews])
+    await db_session.flush()
+
+    reviews.sort(key=lambda x: (x.created_at, x.id), reverse=True)
+    expected_ids = [r.id for r in reviews]
+
+    limit = 2
+    pagination_params = pagination_params_factory(limit=limit)
+    for i in range(3):
+        db_session.expunge_all()
+        review_data_list = await get_product_review_list_serv(
+            product.id, pagination_params, db_session
+        )
+        pagination_params.cursor = review_data_list.next_cursor
+
+        assert len(review_data_list.review_list) == limit
+        for j in range(limit):
+            assert review_data_list.review_list[j].id == expected_ids[j + limit * i]
+
+
+@pytest.mark.asyncio
+async def test_get_product_review_list_serv_unsupported_sort_field_bad_request_error(
+    db_session,
+):
+    product = product_factory()
+    db_session.add(product)
+    await db_session.flush()
+
+    limit = 2
+    pagination_params = pagination_params_factory(sort_by="random_field", limit=limit)
+    with pytest.raises(BadRequest):
+        await get_product_review_list_serv(
+            product.id, pagination_params, db_session
+        )

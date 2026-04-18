@@ -1,42 +1,40 @@
 import random
 from datetime import datetime, timedelta
+from typing import Any
 from uuid import UUID
 
 from sqlalchemy import bindparam, func, select, tuple_, update
 from sqlalchemy.dialects.postgresql import insert
 from sqlalchemy.ext.asyncio import AsyncSession
-from sqlalchemy.orm import joinedload, selectinload
+from sqlalchemy.orm import contains_eager, joinedload
 
 from app.database.models.product import Product
 from app.database.models.product_avg_rating import ProductAverageRating
 from app.database.models.review import Review
 from app.database.models.user import User
-from app.schemas.products import NewProductData, NewReviewData
-from app.schemas.user import UserTokenData
+from app.schemas.product import NewProductData, NewReviewData
 
 
 async def get_product_list_repo(
-    created_at_cursor: datetime | None,
-    id_cursor: UUID | None,
+    sort_field: Any,
+    last_value: Any | None,
+    last_id: UUID | None,
     limit: int,
     session: AsyncSession,
 ):
-    stmt = select(Product).options(selectinload(Product.product_rating))
-    stmt = stmt.order_by(Product.created_at.desc(), Product.id.desc()).limit(limit)
+    stmt = (
+        select(Product)
+        .outerjoin(Product.product_rating)
+        .options(contains_eager(Product.product_rating))
+    )
+    stmt = stmt.order_by(sort_field.desc().nullslast(), Product.id.desc()).limit(limit)
 
-    if created_at_cursor and id_cursor:
-        stmt = stmt.where(
-            tuple_(Product.created_at, Product.id) < (created_at_cursor, id_cursor)
-        )
+    if last_value is not None and last_id:
+        stmt = stmt.where(tuple_(sort_field, Product.id) < (last_value, last_id))
 
     results = (await session.execute(stmt)).scalars().all()
 
-    next_cursor = {"created_at": None, "id": None}
-    if results:
-        last = results[-1]
-        next_cursor = {"created_at": last.created_at, "id": last.id}
-
-    return results, next_cursor
+    return results
 
 
 async def get_product_data_repo(product_id: UUID, session: AsyncSession):
@@ -46,7 +44,7 @@ async def get_product_data_repo(product_id: UUID, session: AsyncSession):
             .options(joinedload(Product.product_rating))
             .where(Product.id == product_id)
         )
-    ).scalar_one()
+    ).scalar_one_or_none()
     return product
 
 
@@ -55,6 +53,16 @@ async def update_product_average_rating_repo(
 ):
 
     rating_counts = {f"rating_{i}_count": int(i == rating) for i in range(1, 6)}
+
+    total_score_sql = sum(
+        (
+            getattr(ProductAverageRating, f"rating_{i}_count")
+            + rating_counts[f"rating_{i}_count"]
+        )
+        * i
+        for i in range(1, 6)
+    )
+    new_total_count = ProductAverageRating.rating_count + 1
 
     stmt = (
         insert(ProductAverageRating)
@@ -71,15 +79,8 @@ async def update_product_average_rating_repo(
                     col: getattr(ProductAverageRating, col) + val
                     for col, val in rating_counts.items()
                 },
-                "rating_count": ProductAverageRating.rating_count + 1,
-                "avg_rating": (
-                    (
-                        ProductAverageRating.avg_rating
-                        * ProductAverageRating.rating_count
-                        + rating
-                    )
-                    / (ProductAverageRating.rating_count + 1)
-                ),
+                "rating_count": new_total_count,
+                "avg_rating": total_score_sql / new_total_count,
             },
         )
     )
@@ -130,52 +131,39 @@ async def get_random_product(session: AsyncSession):
     ).scalar_one_or_none()
     return product
 
+
 async def create_product_review_repo(
-    product_id: UUID,
-    reviewData: NewReviewData,
-    token_data: UserTokenData,
+    new_review: Review,
     session: AsyncSession,
 ):
-    new_review = Review(
-        text=reviewData.text,
-        product_rating=reviewData.product_rating,
-        product_id=product_id,
-        user_id=token_data.id,
-    )
     session.add(new_review)
+    await session.flush()
 
 
-async def get_product_reviews_list_repo(
+async def get_product_review_list_repo(
     product_id: UUID,
-    created_at_cursor: datetime | None,
-    id_cursor: UUID | None,
+    sort_field: Any,
+    last_value: Any | None,
+    last_id: UUID | None,
     limit: int,
     session: AsyncSession,
 ):
     stmt = (
-        select(
-            Review.id,
-            Review.text,
-            Review.created_at,
-            Review.product_rating,
-            User.first_name,
-            User.last_name,
-        )
-        .join(User, Review.user_id == User.id)
+        select(Review)
+        .options(joinedload(Review.user))
         .where(Review.product_id == product_id)
     )
+    stmt = stmt.order_by(sort_field.desc().nullslast(), Review.id.desc()).limit(limit)
 
-    if created_at_cursor and id_cursor:
-        stmt = stmt.where(
-            tuple_(Review.created_at, Review.id) < (created_at_cursor, id_cursor)
-        )
+    if last_value is not None and last_id:
+        stmt = stmt.where(tuple_(sort_field, Review.id) < (last_value, last_id))
 
-    stmt = stmt.order_by(Review.created_at.desc(), Review.id.desc()).limit(limit)
+    results = (await session.execute(stmt)).scalars().all()
+    return results
 
-    results = (await session.execute(stmt)).all()
-    next_cursor = {"created_at": None, "id": None}
-    if results:
-        last = results[-1]
-        next_cursor = {"created_at": last.created_at, "id": last.id}
 
-    return results, next_cursor
+async def get_review_by_user_and_product_repo(product_id, user_id, session):
+    res = await session.execute(
+        select(Review).where(Review.product_id == product_id, Review.user_id == user_id)
+    )
+    return res.scalars().all()
