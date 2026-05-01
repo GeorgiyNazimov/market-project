@@ -7,19 +7,20 @@ from app.api.dependencies import RoleChecker, get_session
 from app.schemas.base import IdResponse, PaginationParams
 from app.schemas.product import (
     NewProductData,
-    NewReviewData,
     ProductData,
-    ReviewDataList,
+    ProductUpdateData,
     ShortProductDataList,
 )
+from app.schemas.review import NewReviewData, ReviewDataList
 from app.schemas.user import UserTokenData
 from app.services.product import (
-    add_product_in_market,
-    create_product_review_serv,
-    get_product_serv,
+    create_product_serv,
+    delete_product_serv,
     get_product_list_serv,
-    get_product_review_list_serv,
+    get_product_serv,
+    update_product_serv,
 )
+from app.services.review import create_review_serv, get_review_list_serv
 
 app = APIRouter(prefix="/products", tags=["Products"])
 
@@ -33,25 +34,39 @@ async def get_product_list_handler(
     return product_list
 
 
-# тестовая ручка для добавления нового товара в магазин
-@app.post("/trade")
-async def add_product_in_market_handler(
-    productInfo: NewProductData, session: AsyncSession = Depends(get_session)
-):
-    await add_product_in_market(productInfo, session)
-
-
-# тестовая ручка для получения информации о случайном
-@app.get("/random")
-async def get_random_product_handler(
+@app.post("/")
+async def create_product_handler(
+    product_data: NewProductData,
+    token_data: UserTokenData = Depends(RoleChecker(["admin"])),
     session: AsyncSession = Depends(get_session),
-) -> ProductData:
-    rand_product = await get_random_product(session)
-    return ProductData.model_validate(rand_product)
+):
+    product_id = await create_product_serv(product_data, session)
+    return IdResponse(id=product_id)
+
+
+@app.patch("/{product_id}")
+async def update_product_handler(
+    product_id: UUID,
+    product_update_data: ProductUpdateData,
+    token_data: UserTokenData = Depends(RoleChecker(["admin"])),
+    session: AsyncSession = Depends(get_session),
+):
+    updated_id = await update_product_serv(product_id, product_update_data, session)
+    return IdResponse(id=updated_id)
+
+
+@app.delete("/{product_id}")
+async def delete_product_handler(
+    product_id: UUID,
+    token_data: UserTokenData = Depends(RoleChecker(["admin"])),
+    session: AsyncSession = Depends(get_session),
+):
+    deleted_id = await delete_product_serv(product_id, session)
+    return IdResponse(id=deleted_id)
 
 
 @app.get("/{product_id}")
-async def get_product_data_handler(
+async def get_product_handler(
     product_id: UUID, session: AsyncSession = Depends(get_session)
 ) -> ProductData:
     product_data = await get_product_serv(product_id, session)
@@ -64,9 +79,7 @@ async def get_product_review_list_handler(
     pagination_params: PaginationParams = Depends(),
     session: AsyncSession = Depends(get_session),
 ) -> ReviewDataList:
-    review_list = await get_product_review_list_serv(
-        product_id, pagination_params, session
-    )
+    review_list = await get_review_list_serv(product_id, pagination_params, session)
     return review_list
 
 
@@ -77,4 +90,5 @@ async def create_product_review_handler(
     token_data: UserTokenData = Depends(RoleChecker(["user"])),
     session: AsyncSession = Depends(get_session),
 ):
-    await create_product_review_serv(product_id, review_data, token_data, session)
+    new_review = await create_review_serv(product_id, review_data, token_data, session)
+    return new_review

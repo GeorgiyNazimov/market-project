@@ -1,4 +1,5 @@
 from datetime import datetime
+from decimal import Decimal
 from typing import List
 from uuid import UUID
 
@@ -53,35 +54,15 @@ class ProductData(BaseModel):
     model_config = ConfigDict(from_attributes=True)
 
 
-# тестовая схема для добавления новых товаров в бд
 class NewProductData(BaseModel):
     name: str
-    price: float
+    description: str | None
+    price: Decimal
     stock: int
 
 
-class NewReviewData(BaseModel):
-    text: str
-    product_rating: int
-
-
-class ReviewUserData(BaseModel):
-    first_name: str | None
-    last_name: str | None
-
-    model_config = ConfigDict(from_attributes=True)
-
-
-class ReviewData(BaseModel):
-    id: UUID
-    created_at: datetime
-    user: ReviewUserData
-    text: str
-    product_rating: int
-
-    model_config = ConfigDict(from_attributes=True)
-
-
-class ReviewDataList(BaseModel):
-    review_list: List[ReviewData]
-    next_cursor: str | None
+class ProductUpdateData(BaseModel):
+    name: str | None = None
+    description: str | None = None
+    price: Decimal | None = None
+    stock: int | None = None

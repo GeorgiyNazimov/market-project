@@ -3,56 +3,257 @@ from uuid import uuid4
 
 import pytest
 from sqlalchemy import select
-from sqlalchemy.exc import IntegrityError
 
 from app.database.models.product import Product
 from app.database.models.product_avg_rating import ProductAverageRating
-from app.database.models.review import Review
 from app.repositories.product import (
-    create_product,
-    create_product_review_repo,
-    get_product_data_repo,
+    create_product_repo,
+    delete_product_repo,
+    get_product_by_name_repo,
+    get_product_repo,
     update_product_average_rating_repo,
+    update_product_repo,
     update_products_stock_repo,
 )
-from tests.factories.products import new_product_data_factory, product_factory
-from tests.factories.reviews import new_review_data_factory
-from tests.factories.users import user_factory
+from tests.factories.products import (
+    product_factory,
+    product_update_data_factory,
+)
 
 
 @pytest.mark.asyncio
-async def test_create_product(db_session):
-    new_product_data = new_product_data_factory()
+async def test_create_product_success(db_session):
+    new_product = product_factory()
 
-    await create_product(new_product_data, db_session)
+    await create_product_repo(new_product, db_session)
 
     product = (await db_session.execute(select(Product))).scalar_one()
-    assert product.name == new_product_data.name
-    assert product.price == new_product_data.price
-    assert product.stock == new_product_data.stock
+    assert product.name == new_product.name
+    assert product.price == new_product.price
+    assert product.stock == new_product.stock
 
 
 @pytest.mark.asyncio
 async def test_get_product_data_repo_success(db_session):
-    product = product_factory()
+    product = product_factory(product_rating_include=True)
     db_session.add(product)
     await db_session.flush()
 
-    product_data = await get_product_data_repo(product.id, db_session)
+    product_data = await get_product_repo(product.id, db_session)
 
     assert product_data.id == product.id
     assert product_data.name == product.name
     assert product_data.price == product.price
-    assert product_data.product_rating is None
+    assert product_data.product_rating.avg_rating == 0
+    assert product_data.product_rating.rating_count == 0
+    for i in range(1, 6):
+        field = f"rating_{i}_count"
+        assert getattr(product_data.product_rating, field) == 0
 
 
 @pytest.mark.asyncio
 async def test_get_product_data_repo_missing_id_returns_none(db_session):
-    product_data = await get_product_data_repo(uuid4(), db_session)
+    product_data = await get_product_repo(product_id=uuid4(), session=db_session)
 
     assert product_data is None
 
 
+@pytest.mark.asyncio
+async def test_get_product_by_name_repo_success(db_session):
+    name = "product_name"
+    product = product_factory(name)
+    db_session.add(product)
+    await db_session.flush()
+
+    db_product = await get_product_by_name_repo(name, db_session)
+
+    assert db_product.name == product.name
+    assert db_product.price == product.price
+    assert db_product.stock == product.stock
+
+
+@pytest.mark.asyncio
+async def test_get_product_by_name_repo_missing_name_returns_none(db_session):
+    name = "missing_product_name"
+    product = product_factory()
+    db_session.add(product)
+    await db_session.flush()
+
+    db_product = await get_product_by_name_repo(name, db_session)
+
+    assert db_product is None
+
+
+@pytest.mark.asyncio
+async def test_update_product_repo_success(db_session):
+    product = product_factory()
+    update_data = product_update_data_factory()
+    db_session.add(product)
+    await db_session.flush()
+
+    update_data = update_data.model_dump(exclude_unset=True)
+    updated_id = await update_product_repo(product.id, update_data, db_session)
+
+    await db_session.refresh(product)
+    assert product.id == updated_id
+    assert product.name == update_data["name"]
+    assert product.price == update_data["price"]
+
+
+@pytest.mark.asyncio
+async def test_update_product_repo_missing_product_id_returns_none(db_session):
+    product = product_factory()
+    update_data = product_update_data_factory()
+    db_session.add(product)
+    await db_session.flush()
+
+    update_data = update_data.model_dump(exclude_unset=True)
+    updated_id = await update_product_repo(
+        product_id=uuid4(), update_data=update_data, session=db_session
+    )
+
+    assert updated_id is None
+
+
+@pytest.mark.asyncio
+async def test_delete_product_repo_success(db_session):
+    product = product_factory()
+    db_session.add(product)
+    await db_session.flush()
+
+    deleted_id = await delete_product_repo(product.id, db_session)
+
+    assert deleted_id == product.id
+
+
+@pytest.mark.asyncio
+async def test_delete_product_repo_missing_id_returns_none(db_session):
+    product = product_factory()
+    db_session.add(product)
+    await db_session.flush()
+
+    deleted_id = await delete_product_repo(product_id=uuid4(), session=db_session)
+
+    assert deleted_id is None
+
+
+@pytest.mark.asyncio
+async def test_update_product_average_rating_repo_create_review_success(db_session):
+    product = product_factory()
+    db_session.add(product)
+    await db_session.flush()
+
+    db_avg = (
+        await db_session.execute(
+            select(ProductAverageRating).where(
+                ProductAverageRating.product_id == product.id
+            )
+        )
+    ).scalar_one_or_none()
+    assert db_avg is None
+
+    await update_product_average_rating_repo(
+        product_id=product.id, new_rating=5, old_rating=None, session=db_session
+    )
+
+    await update_product_average_rating_repo(
+        product_id=product.id, new_rating=2, old_rating=None, session=db_session
+    )
+
+    db_session.expunge_all()
+
+    db_avg = (
+        await db_session.execute(
+            select(ProductAverageRating).where(
+                ProductAverageRating.product_id == product.id
+            )
+        )
+    ).scalar_one()
+    assert db_avg is not None
+    assert db_avg.rating_count == 2
+    assert db_avg.rating_5_count == 1
+    assert db_avg.rating_2_count == 1
+    assert db_avg.avg_rating == pytest.approx(3.5)
+
+
+@pytest.mark.asyncio
+async def test_update_product_average_rating_repo_update_review_success(db_session):
+    product = product_factory()
+    db_session.add(product)
+    await db_session.flush()
+
+    db_avg = (
+        await db_session.execute(
+            select(ProductAverageRating).where(
+                ProductAverageRating.product_id == product.id
+            )
+        )
+    ).scalar_one_or_none()
+    assert db_avg is None
+
+    await update_product_average_rating_repo(
+        product_id=product.id, new_rating=5, old_rating=None, session=db_session
+    )
+
+    await update_product_average_rating_repo(
+        product_id=product.id, new_rating=2, old_rating=5, session=db_session
+    )
+
+    db_session.expunge_all()
+
+    db_avg = (
+        await db_session.execute(
+            select(ProductAverageRating).where(
+                ProductAverageRating.product_id == product.id
+            )
+        )
+    ).scalar_one()
+    assert db_avg is not None
+    assert db_avg.rating_count == 1
+    assert db_avg.rating_5_count == 0
+    assert db_avg.rating_2_count == 1
+    assert db_avg.avg_rating == pytest.approx(2)
+
+
+@pytest.mark.asyncio
+async def test_update_product_average_rating_repo_delete_review_success(db_session):
+    product = product_factory()
+    db_session.add(product)
+    await db_session.flush()
+
+    db_avg = (
+        await db_session.execute(
+            select(ProductAverageRating).where(
+                ProductAverageRating.product_id == product.id
+            )
+        )
+    ).scalar_one_or_none()
+    assert db_avg is None
+
+    await update_product_average_rating_repo(
+        product_id=product.id, new_rating=5, old_rating=None, session=db_session
+    )
+
+    await update_product_average_rating_repo(
+        product_id=product.id, new_rating=None, old_rating=5, session=db_session
+    )
+
+    db_session.expunge_all()
+
+    db_avg = (
+        await db_session.execute(
+            select(ProductAverageRating).where(
+                ProductAverageRating.product_id == product.id
+            )
+        )
+    ).scalar_one()
+    assert db_avg is not None
+    assert db_avg.rating_count == 0
+    assert db_avg.rating_5_count == 0
+    assert db_avg.avg_rating == pytest.approx(0)
+
+
+@pytest.mark.asyncio
 async def test_update_product_average_rating_repo_precision_check(db_session):
     product = product_factory()
     db_session.add(product)
@@ -61,7 +262,7 @@ async def test_update_product_average_rating_repo_precision_check(db_session):
     ratings = [1, 5, 4, 3, 2, 5, 5, 4, 1, 2] * 10
 
     for val in ratings:
-        await update_product_average_rating_repo(product.id, val, db_session)
+        await update_product_average_rating_repo(product.id, val, None, db_session)
 
     res = await db_session.execute(
         select(ProductAverageRating).where(
@@ -110,50 +311,3 @@ async def test_update_products_stock_repo_success(db_session):
     products = (await db_session.execute(select(Product))).scalars().all()
     for product in products:
         assert product.stock == initial_stock[product.id] + 3
-
-
-@pytest.mark.asyncio
-async def test_create_product_review_repo_success(db_session):
-    product = product_factory()
-    user = user_factory()
-    db_session.add_all([user, product])
-    await db_session.flush()
-
-    review_data = new_review_data_factory()
-    review = Review(
-        text=review_data.text,
-        product_rating=review_data.product_rating,
-        product_id=product.id,
-        user_id=user.id,
-    )
-    await create_product_review_repo(review, db_session)
-
-    review = (await db_session.execute(select(Review))).scalar_one()
-    assert review.product_id == product.id
-    assert review.user_id == user.id
-    assert review.text == review_data.text
-
-
-@pytest.mark.parametrize("missing_entity", ["product", "user"])
-@pytest.mark.asyncio
-async def test_create_product_review_repo_fk_violation(db_session, missing_entity):
-    product = product_factory()
-    user = user_factory()
-
-    if missing_entity == "user":
-        db_session.add(product)
-    else:
-        db_session.add(user)
-
-    await db_session.flush()
-
-    review_data = new_review_data_factory()
-    review = Review(
-        text=review_data.text,
-        product_rating=review_data.product_rating,
-        product_id=product.id,
-        user_id=user.id,
-    )
-    with pytest.raises(IntegrityError):
-        await create_product_review_repo(review, db_session)
-        await db_session.flush()

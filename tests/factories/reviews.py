@@ -1,12 +1,11 @@
 from datetime import datetime
 from random import randint
-from typing import List
 from uuid import uuid4
 
 from app.database.models.product import Product
 from app.database.models.review import Review
 from app.database.models.user import User
-from app.schemas.product import NewReviewData
+from app.schemas.review import NewReviewData, ReviewUpdateData
 from tests.factories.products import product_factory
 from tests.factories.users import user_factory
 
@@ -28,16 +27,11 @@ def new_review_data_factory(text: str = "text", rating: int = 5):
     return NewReviewData(text=text, product_rating=rating)
 
 
-def multiple_products_factory(count: int = 2) -> List[Review]:
-    base_time = datetime.utcnow()
-    return [
-        Review(
-            id=uuid4(),
-            text="text",
-            product_rating=randint(1, 5),
-            user=user or user_factory(),
-            product=product or product_factory(),
-            created_at=datetime.utcnow() + timedelta(i),
-        )
-        for i in range(count)
-    ]
+def review_update_data_factory(
+    text: str | None = "updated_review_text",
+    new_rating: int | None = None,
+):
+    return ReviewUpdateData(
+        text=text,
+        product_rating=new_rating if new_rating is not None else randint(1, 5),
+    )
