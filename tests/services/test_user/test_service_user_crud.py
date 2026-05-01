@@ -1,12 +1,12 @@
 from types import SimpleNamespace
 
-from jose import jwt
 import pytest
+from jose import jwt
 from sqlalchemy import select
 
 from app.core.exceptions import AuthenticationError, ConflictError, NotFoundError
 from app.database.models.user import User
-from app.services.user import get_user_data_serv, login_serv, create_user_serv
+from app.services.user import create_user_serv, get_user_data_serv, login_serv
 from tests.factories.users import new_user_data_factory, user_factory
 
 

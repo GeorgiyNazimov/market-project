@@ -1,39 +1,57 @@
 import pytest
 
-from app.services.products import get_product_list
+from app.core.exceptions import BadRequest
+from app.services.product import get_product_list_serv
+from tests.factories.base import pagination_params_factory
 from tests.factories.products import multiple_products_factory
 
 
 @pytest.mark.asyncio
-async def test_get_product_list_without_cursor(db_session):
-    new_products = multiple_products_factory(4)
-    db_session.add_all(new_products)
+async def test_get_product_list_serv_without_cursor_success(db_session):
+    products = multiple_products_factory(6)
+    db_session.add_all(products)
     await db_session.flush()
-    new_products.sort(key=lambda x: (x.created_at, x.id), reverse=True)
 
-    products = await get_product_list(None, None, limit=2, session=db_session)
+    products.sort(key=lambda x: (x.created_at, x.id), reverse=True)
+    expected_ids = [p.id for p in products]
 
-    assert len(products.product_list) == 2
-    assert products.product_list[-1].id == new_products[1].id
-    assert products.product_list[-1].created_at == new_products[1].created_at
-    assert products.next_cursor.id == new_products[1].id
-    assert products.next_cursor.created_at == new_products[1].created_at
+    db_session.expunge_all()
+
+    limit = 2
+    pagination_params = pagination_params_factory(limit=limit)
+    product_data_list = await get_product_list_serv(pagination_params, db_session)
+
+    assert len(product_data_list.product_list) == limit
+    for i in range(limit):
+        assert product_data_list.product_list[i].id == expected_ids[i]
 
 
 @pytest.mark.asyncio
-async def test_get_product_list_with_cursor(db_session):
-    new_products = multiple_products_factory(4)
-    db_session.add_all(new_products)
+async def test_get_product_list_serv_pagination_success(db_session):
+    products = multiple_products_factory(6)
+    db_session.add_all(products)
     await db_session.flush()
-    new_products.sort(key=lambda x: (x.created_at, x.id), reverse=True)
-    products = await get_product_list(None, None, limit=2, session=db_session)
 
-    products = await get_product_list(
-        products.next_cursor.created_at, products.next_cursor.id, 2, db_session
-    )
+    products.sort(key=lambda x: (x.created_at, x.id), reverse=True)
+    expected_ids = [p.id for p in products]
 
-    assert len(products.product_list) == 2
-    assert products.product_list[-1].id == new_products[3].id
-    assert products.product_list[-1].created_at == new_products[3].created_at
-    assert products.next_cursor.id == new_products[3].id
-    assert products.next_cursor.created_at == new_products[3].created_at
+    limit = 2
+    pagination_params = pagination_params_factory(limit=limit)
+    for i in range(3):
+        db_session.expunge_all()
+        product_data_list = await get_product_list_serv(pagination_params, db_session)
+        pagination_params.cursor = product_data_list.next_cursor
+
+        assert len(product_data_list.product_list) == limit
+        for j in range(limit):
+            assert product_data_list.product_list[j].id == expected_ids[j + limit * i]
+
+
+@pytest.mark.asyncio
+async def test_get_product_list_serv_unsupported_sort_field_bad_request_error(
+    db_session,
+):
+    limit = 2
+    pagination_params = pagination_params_factory(sort_by="random_field", limit=limit)
+    with pytest.raises(BadRequest):
+        await get_product_list_serv(pagination_params, db_session)

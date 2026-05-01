@@ -14,7 +14,7 @@ from app.repositories.user import (
     get_user_by_email_repo,
     get_user_by_id_repo,
 )
-from app.schemas.user import UserTokenData, Token, UserCreateData, UserGetData
+from app.schemas.user import Token, UserCreateData, UserGetData, UserTokenData
 
 # Контекст для хеширования паролей
 pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")

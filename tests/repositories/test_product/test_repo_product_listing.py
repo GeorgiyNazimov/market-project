@@ -1,39 +1,66 @@
+from datetime import datetime, timedelta
+
 import pytest
 
-from app.repositories.products import get_product_list_from_db
-from tests.factories.products import multiple_products_factory
+from app.database.models.product import Product
+from app.repositories.product import get_product_list_repo
+from tests.factories.products import product_factory
 
 
 @pytest.mark.asyncio
-async def test_get_product_list_without_cursor(db_session):
-    new_products = multiple_products_factory(4)
-    db_session.add_all(new_products)
+async def test_get_product_list_repo_without_cursor_success(db_session):
+    products = [
+        product_factory(created_at=datetime.utcnow() + timedelta(minutes=i))
+        for i in range(4)
+    ]
+    db_session.add_all(products)
     await db_session.flush()
-    new_products.sort(key=lambda x: (x.created_at, x.id), reverse=True)
 
-    product_list, _ = await get_product_list_from_db(
-        None, None, limit=2, session=db_session
+    products.sort(key=lambda x: (x.created_at, x.id), reverse=True)
+    expected_ids = [p.id for p in products]
+
+    db_session.expunge_all()
+    limit = 2
+    product_list = await get_product_list_repo(
+        sort_field=Product.created_at,
+        last_value=None,
+        last_id=None,
+        limit=limit,
+        session=db_session,
     )
 
-    assert len(product_list) == 2
-    assert product_list[-1].id == new_products[1].id
-    assert product_list[-1].created_at == new_products[1].created_at
+    assert len(product_list) == limit
+    for i in range(limit):
+        assert product_list[i].id == expected_ids[i]
+        assert hasattr(product_list[i], "product_rating")
 
 
 @pytest.mark.asyncio
-async def test_get_product_list_with_cursor(db_session):
-    new_products = multiple_products_factory(4)
-    db_session.add_all(new_products)
+async def test_get_product_list_repo_pagination_success(db_session):
+    products = [
+        product_factory(created_at=datetime.utcnow() + timedelta(minutes=i))
+        for i in range(6)
+    ]
+    db_session.add_all(products)
     await db_session.flush()
-    new_products.sort(key=lambda x: (x.created_at, x.id), reverse=True)
-    _, next_cursor = await get_product_list_from_db(
-        None, None, limit=2, session=db_session
-    )
 
-    product_list, next_cursor = await get_product_list_from_db(
-        next_cursor["created_at"], next_cursor["id"], 2, db_session
-    )
+    products.sort(key=lambda x: (x.created_at, x.id), reverse=True)
+    expected_ids = [p.id for p in products]
 
-    assert len(product_list) == 2
-    assert product_list[-1].id == new_products[3].id
-    assert product_list[-1].created_at == new_products[3].created_at
+    limit = 2
+    last_value, last_id = None, None
+    for i in range(3):
+        db_session.expunge_all()
+        product_list = await get_product_list_repo(
+            sort_field=Product.created_at,
+            last_value=last_value,
+            last_id=last_id,
+            limit=limit,
+            session=db_session,
+        )
+        last_value = product_list[-1].created_at
+        last_id = product_list[-1].id
+
+        assert len(product_list) == limit
+        for j in range(limit):
+            assert product_list[j].id == expected_ids[j + limit * i]

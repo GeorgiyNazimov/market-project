@@ -1,6 +1,6 @@
-from jose import jwt
 import pytest
 from fastapi import status
+from jose import jwt
 
 from app.api.dependencies import get_session, get_token_data
 from tests.factories.users import new_user_data_factory, user_factory

@@ -1,61 +1,80 @@
-from datetime import datetime
+from typing import Any
 from uuid import UUID
 
-from sqlalchemy import select, tuple_
+from sqlalchemy import delete, select, tuple_, update
 from sqlalchemy.ext.asyncio import AsyncSession
+from sqlalchemy.orm import joinedload
 
 from app.database.models.review import Review
-from app.database.models.user import User
-from app.schemas.user import UserTokenData
-from app.schemas.review import NewReviewData
 
 
-async def create_product_review_db(
-    product_id: UUID,
-    reviewData: NewReviewData,
-    token_data: UserTokenData,
+async def create_review_repo(
+    new_review: Review,
     session: AsyncSession,
 ):
-    new_review = Review(
-        text=reviewData.text,
-        product_rating=reviewData.product_rating,
-        product_id=product_id,
-        user_id=token_data.id,
-    )
     session.add(new_review)
+    await session.flush()
 
 
-async def get_product_reviews_list_db(
+async def get_review_by_id_repo(review_id: UUID, session: AsyncSession):
+    return await session.get(Review, review_id)
+
+
+async def get_review_list_repo(
     product_id: UUID,
-    created_at_cursor: datetime | None,
-    id_cursor: UUID | None,
+    sort_field: Any,
+    last_value: Any | None,
+    last_id: UUID | None,
     limit: int,
     session: AsyncSession,
 ):
     stmt = (
-        select(
-            Review.id,
-            Review.text,
-            Review.created_at,
-            Review.product_rating,
-            User.first_name,
-            User.last_name,
-        )
-        .join(User, Review.user_id == User.id)
+        select(Review)
+        .options(joinedload(Review.user))
         .where(Review.product_id == product_id)
     )
+    stmt = stmt.order_by(sort_field.desc().nullslast(), Review.id.desc()).limit(limit)
 
-    if created_at_cursor and id_cursor:
-        stmt = stmt.where(
-            tuple_(Review.created_at, Review.id) < (created_at_cursor, id_cursor)
-        )
+    if last_value is not None and last_id:
+        stmt = stmt.where(tuple_(sort_field, Review.id) < (last_value, last_id))
 
-    stmt = stmt.order_by(Review.created_at.desc(), Review.id.desc()).limit(limit)
+    results = (await session.execute(stmt)).scalars().all()
+    return results
 
-    results = (await session.execute(stmt)).all()
-    next_cursor = {"created_at": None, "id": None}
-    if results:
-        last = results[-1]
-        next_cursor = {"created_at": last.created_at, "id": last.id}
 
-    return results, next_cursor
+async def get_review_by_user_and_product_repo(
+    product_id: UUID, user_id: UUID, session: AsyncSession
+):
+    res = await session.execute(
+        select(Review).where(Review.product_id == product_id, Review.user_id == user_id)
+    )
+    return res.scalars().all()
+
+
+async def update_review_repo(
+    review_id: UUID, user_id: UUID | None, update_data: dict, session: AsyncSession
+):
+    stmt = (
+        update(Review)
+        .where(Review.id == review_id)
+        .values(**update_data)
+        .returning(Review.id)
+    )
+
+    if user_id is not None:
+        stmt = stmt.where(Review.user_id == user_id)
+
+    res = await session.execute(stmt)
+    return res.scalar_one_or_none()
+
+
+async def delete_review_repo(
+    review_id: UUID, user_id: UUID | None, session: AsyncSession
+):
+    stmt = delete(Review).where(Review.id == review_id).returning(Review.id)
+
+    if user_id is not None:
+        stmt = stmt.where(Review.user_id == user_id)
+
+    res = await session.execute(stmt)
+    return res.scalar_one_or_none()

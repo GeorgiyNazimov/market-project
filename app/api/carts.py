@@ -4,12 +4,12 @@ from fastapi import APIRouter, Depends
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.api.dependencies import RoleChecker, get_session
-from app.schemas.user import UserTokenData
 from app.schemas.cart import CartItemList, NewCartItemData, UpdateCartItemData
+from app.schemas.user import UserTokenData
 from app.services.cart import (
     create_cart_item_serv,
-    delete_cart_serv,
     delete_cart_item_serv,
+    delete_cart_serv,
     get_cart_items_serv,
     update_cart_item_quantity_serv,
 )

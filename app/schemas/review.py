@@ -10,21 +10,28 @@ class NewReviewData(BaseModel):
     product_rating: int
 
 
-class ReviewData(BaseModel):
-    created_at: datetime
+class ReviewUserData(BaseModel):
     first_name: str | None
     last_name: str | None
+
+    model_config = ConfigDict(from_attributes=True)
+
+
+class ReviewData(BaseModel):
+    id: UUID
+    created_at: datetime
+    user: ReviewUserData
     text: str
     product_rating: int
 
     model_config = ConfigDict(from_attributes=True)
 
 
-class NextCursorData(BaseModel):
-    created_at: datetime | None
-    id: UUID | None
-
-
 class ReviewDataList(BaseModel):
-    reviews_list: List[ReviewData]
-    next_cursor: NextCursorData
+    review_list: List[ReviewData]
+    next_cursor: str | None
+
+
+class ReviewUpdateData(BaseModel):
+    text: str | None = None
+    product_rating: int | None = None

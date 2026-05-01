@@ -1,13 +1,9 @@
 from datetime import datetime
+from decimal import Decimal
 from typing import List
 from uuid import UUID
 
 from pydantic import BaseModel, ConfigDict
-
-
-class NextCursorData(BaseModel):
-    created_at: datetime
-    id: UUID
 
 
 class ShortProductRatingData(BaseModel):
@@ -31,7 +27,7 @@ class ShortProductData(BaseModel):
 
 class ShortProductDataList(BaseModel):
     product_list: List[ShortProductData]
-    next_cursor: NextCursorData
+    next_cursor: str | None
 
 
 class ProductRatingData(BaseModel):
@@ -58,8 +54,15 @@ class ProductData(BaseModel):
     model_config = ConfigDict(from_attributes=True)
 
 
-# тестовая схема для добавления новых товаров в бд
 class NewProductData(BaseModel):
     name: str
-    price: float
+    description: str | None
+    price: Decimal
     stock: int
+
+
+class ProductUpdateData(BaseModel):
+    name: str | None = None
+    description: str | None = None
+    price: Decimal | None = None
+    stock: int | None = None
