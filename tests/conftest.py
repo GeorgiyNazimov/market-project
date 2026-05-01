@@ -4,16 +4,17 @@ import pytest
 from alembic import command
 from alembic.config import Config
 from httpx import ASGITransport, AsyncClient
-from sqlalchemy import text
+from passlib.context import CryptContext
+from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.config.default import get_settings
 from app.core.exception_handler import register_exception_handlers
-from app.database import Base
 from app.database.connection.session import (
     get_async_session_maker,
     get_engine,
 )
 from app.main import get_app
+from app.services import user
 from tests.factories.users import user_factory
 
 
@@ -46,13 +47,18 @@ async def test_async_session_maker(test_engine):
 
 
 @pytest.fixture(scope="function")
-async def db_session(test_async_session_maker, test_engine):
-    async with test_async_session_maker() as session:
-        yield session
+async def db_session(test_engine):
+    async with test_engine.connect() as connection:
+        transaction = await connection.begin()
 
-    async with test_engine.begin() as conn:
-        for table in reversed(Base.metadata.sorted_tables):
-            await conn.execute(text(f'TRUNCATE TABLE "{table.name}" CASCADE'))
+        async_session = AsyncSession(
+            bind=connection,
+            expire_on_commit=False,
+            join_transaction_mode="create_savepoint",
+        )
+        yield async_session
+        await async_session.close()
+        await transaction.rollback()
 
 
 @pytest.fixture
@@ -62,14 +68,14 @@ def monkeypatch():
     mp.undo()
 
 
-@pytest.fixture
+@pytest.fixture(scope="session")
 def app():
     app = get_app()
     register_exception_handlers(app)
     return app
 
 
-@pytest.fixture
+@pytest.fixture(scope="session")
 async def async_client(app):
     transport = ASGITransport(app=app)
     async with AsyncClient(transport=transport, base_url="http://testserver") as client:
@@ -90,3 +96,16 @@ def override_role_checker():
         return user_factory()
 
     return _override_role_checker
+
+
+@pytest.fixture(scope="session", autouse=True)
+def speed_up_passwords():
+    fast_context = CryptContext(schemes=["bcrypt"], bcrypt__rounds=4)
+    user.pwd_context = fast_context
+
+
+@pytest.fixture(autouse=True)
+def clear_overrides(app):
+    yield
+
+    app.dependency_overrides.clear()
