@@ -11,7 +11,7 @@ from app.database.connection.session import _async_session_maker
 from app.schemas.user import UserTokenData
 
 oauth2_scheme = OAuth2PasswordBearer(
-    tokenUrl=f"{get_settings().PATH_PREFIX}/auth/token"
+    tokenUrl=f"{get_settings().PATH_PREFIX}/users/token"
 )
 
 settings = get_settings()
