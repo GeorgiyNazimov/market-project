@@ -1,4 +1,4 @@
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, timezone
 
 import pytest
 
@@ -13,7 +13,7 @@ async def test_get_product_review_list_repo_without_cursor_success(db_session):
     product = product_factory()
     reviews = [
         review_factory(
-            product=product, created_at=datetime.utcnow() + timedelta(minutes=i)
+            product=product, created_at=datetime.now(timezone.utc) + timedelta(minutes=i)
         )
         for i in range(4)
     ]
@@ -44,7 +44,7 @@ async def test_get_product_review_list_repo_pagination_success(db_session):
     product = product_factory()
     reviews = [
         review_factory(
-            product=product, created_at=datetime.utcnow() + timedelta(minutes=i)
+            product=product, created_at=datetime.now(timezone.utc) + timedelta(minutes=i)
         )
         for i in range(6)
     ]

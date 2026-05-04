@@ -1,4 +1,4 @@
-from datetime import datetime
+from datetime import datetime, timezone
 from decimal import Decimal
 from uuid import uuid4
 
@@ -18,7 +18,7 @@ def order_factory(user: User | None = None, **kwargs) -> Order:
         user=target_user,
         status=kwargs.get("status", "pending"),
         total_price=kwargs.get("total_price", Decimal(0)),
-        created_at=datetime.utcnow(),
+        created_at=datetime.now(timezone.utc),
     )
 
 

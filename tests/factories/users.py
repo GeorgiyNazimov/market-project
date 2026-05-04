@@ -1,4 +1,4 @@
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, timezone
 from uuid import uuid4
 
 from app.database.models.user import User
@@ -19,7 +19,7 @@ def user_factory(
         last_name=kwargs.get("last_name", "last_name"),
         role=kwargs.get("role", "user"),
         password_hash=get_password_hash(password),
-        created_at=kwargs.get("created_at", datetime.utcnow()),
+        created_at=kwargs.get("created_at", datetime.now(timezone.utc)),
     )
 
 
@@ -41,5 +41,5 @@ def token_data_factory(
     return UserTokenData(
         sub=user.id,
         role=user.role,
-        exp=exp if exp is not None else datetime.utcnow() + timedelta(minutes=30),
+        exp=exp if exp is not None else datetime.now(timezone.utc) + timedelta(minutes=30),
     )

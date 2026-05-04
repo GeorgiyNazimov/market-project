@@ -1,4 +1,4 @@
-from datetime import datetime
+from datetime import datetime, timezone
 from uuid import UUID, uuid4
 
 from app.database.models.cart import Cart
@@ -17,7 +17,7 @@ def cart_factory(user: User | None = None, **kwargs) -> Cart:
         id=kwargs.get("id", uuid4()),
         user=target_user,
         total_items=kwargs.get("total_items", 0),
-        created_at=kwargs.get("created_at", datetime.utcnow()),
+        created_at=kwargs.get("created_at", datetime.now(timezone.utc)),
     )
 
 

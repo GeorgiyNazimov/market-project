@@ -1,5 +1,5 @@
 import uuid
-from datetime import datetime
+from datetime import datetime, timezone
 from typing import List
 
 from sqlalchemy import UUID, DateTime, ForeignKey, Integer
@@ -18,7 +18,7 @@ class Cart(Base):
         UUID(as_uuid=True), ForeignKey("users.id", ondelete="CASCADE"), unique=True
     )
     total_items: Mapped[int] = mapped_column(Integer, default=0)
-    created_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.utcnow)
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=lambda: datetime.now(timezone.utc))
 
     user: Mapped["User"] = relationship(back_populates="cart")
     items: Mapped[List["CartItem"]] = relationship(

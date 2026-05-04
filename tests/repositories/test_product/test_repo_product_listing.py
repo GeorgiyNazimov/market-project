@@ -1,4 +1,4 @@
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, timezone
 
 import pytest
 
@@ -10,7 +10,7 @@ from tests.factories.products import product_factory
 @pytest.mark.asyncio
 async def test_get_product_list_repo_without_cursor_success(db_session):
     products = [
-        product_factory(created_at=datetime.utcnow() + timedelta(minutes=i))
+        product_factory(created_at=datetime.now(timezone.utc) + timedelta(minutes=i))
         for i in range(4)
     ]
     db_session.add_all(products)
@@ -38,7 +38,7 @@ async def test_get_product_list_repo_without_cursor_success(db_session):
 @pytest.mark.asyncio
 async def test_get_product_list_repo_pagination_success(db_session):
     products = [
-        product_factory(created_at=datetime.utcnow() + timedelta(minutes=i))
+        product_factory(created_at=datetime.now(timezone.utc) + timedelta(minutes=i))
         for i in range(6)
     ]
     db_session.add_all(products)

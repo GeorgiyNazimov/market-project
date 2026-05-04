@@ -1,5 +1,5 @@
 import uuid
-from datetime import datetime
+from datetime import datetime, timezone
 from typing import List, Optional
 
 from sqlalchemy import UUID, DateTime, String
@@ -19,7 +19,7 @@ class User(Base):
     first_name: Mapped[Optional[str]] = mapped_column(String)
     last_name: Mapped[Optional[str]] = mapped_column(String)
     role: Mapped[str] = mapped_column(String, nullable=False, default="user")
-    created_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.utcnow)
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=lambda: datetime.now(timezone.utc))
 
     cart: Mapped[Optional["Cart"]] = relationship(back_populates="user", uselist=False)
     orders: Mapped[List["Order"]] = relationship(back_populates="user")
