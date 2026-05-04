@@ -1,4 +1,4 @@
-from datetime import datetime
+from datetime import datetime, timezone
 from random import randint
 from uuid import uuid4
 
@@ -19,7 +19,7 @@ def review_factory(
         product_rating=rating,
         user=user or user_factory(),
         product=product or product_factory(),
-        created_at=kwargs.get("created_at", datetime.utcnow()),
+        created_at=kwargs.get("created_at", datetime.now(timezone.utc)),
     )
 
 

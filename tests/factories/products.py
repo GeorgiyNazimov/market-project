@@ -1,4 +1,4 @@
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, timezone
 from decimal import Decimal
 from random import randint
 from typing import List
@@ -26,7 +26,7 @@ def product_factory(
         description=kwargs.get("description", "product_description"),
         price=price if price is not None else randint(1, 10000),
         stock=stock if stock is not None else randint(1, 10000),
-        created_at=kwargs.get("created_at", datetime.utcnow()),
+        created_at=kwargs.get("created_at", datetime.now(timezone.utc)),
         product_rating=product_rating,
     )
 
@@ -52,7 +52,7 @@ def new_product_data_factory(
 
 
 def multiple_products_factory(count: int = 2) -> List[Product]:
-    base_time = datetime.utcnow()
+    base_time = datetime.now(timezone.utc)
     return [
         Product(
             id=uuid4(),

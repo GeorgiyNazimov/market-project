@@ -1,4 +1,4 @@
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, timezone
 
 from freezegun import freeze_time
 from jose import jwt
@@ -23,7 +23,7 @@ def test_create_access_token_with_expires(monkeypatch, test_settings):
 
     assert decoded["sub"] == "email"
     assert decoded["exp"] == int(
-        (datetime.utcnow() + timedelta(minutes=30)).timestamp()
+        (datetime.now(timezone.utc) + timedelta(minutes=30)).timestamp()
     )
 
 
@@ -40,5 +40,5 @@ def test_create_access_token_default_expires(monkeypatch, test_settings):
     )
 
     assert decoded["exp"] == int(
-        (datetime.utcnow() + timedelta(minutes=15)).timestamp()
+        (datetime.now(timezone.utc) + timedelta(minutes=15)).timestamp()
     )
