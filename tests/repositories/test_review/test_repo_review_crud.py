@@ -164,7 +164,7 @@ async def test_update_review_repo_no_user_filter_success(db_session):
 
     new_rating = 5
     update_data = update_data.model_dump(exclude_unset=True)
-    updated_id = await update_review_repo(
+    updated_review = await update_review_repo(
         review_id=review.id,
         user_id=None,
         update_data=update_data,
@@ -174,7 +174,7 @@ async def test_update_review_repo_no_user_filter_success(db_session):
     db_session.expunge_all()
     db_review = await db_session.get(Review, review.id)
 
-    assert updated_id == db_review.id
+    assert updated_review.id == db_review.id
     assert db_review.product_rating == new_rating
 
 
@@ -188,7 +188,7 @@ async def test_update_review_repo_with_user_filter_success(db_session):
 
     new_rating = 5
     update_data = update_data.model_dump(exclude_unset=True)
-    updated_id = await update_review_repo(
+    updated_review = await update_review_repo(
         review_id=review.id,
         user_id=user.id,
         update_data=update_data,
@@ -198,7 +198,7 @@ async def test_update_review_repo_with_user_filter_success(db_session):
     db_session.expunge_all()
     db_review = await db_session.get(Review, review.id)
 
-    assert updated_id == review.id
+    assert updated_review.id == review.id
     assert db_review.product_rating == new_rating
 
 
@@ -212,7 +212,7 @@ async def test_update_review_repo_with_wrong_user_returns_none(db_session):
 
     old_rating = 2
     update_data = update_data.model_dump(exclude_unset=True)
-    updated_id = await update_review_repo(
+    updated_review = await update_review_repo(
         review_id=review.id,
         user_id=uuid4(),
         update_data=update_data,
@@ -222,7 +222,7 @@ async def test_update_review_repo_with_wrong_user_returns_none(db_session):
     db_session.expunge_all()
     db_review = await db_session.get(Review, review.id)
 
-    assert updated_id is None
+    assert updated_review is None
     assert db_review.product_rating == old_rating
 
 
@@ -236,7 +236,7 @@ async def test_update_review_repo_with_missing_id_returns_none(db_session):
 
     old_rating = 2
     update_data = update_data.model_dump(exclude_unset=True)
-    updated_id = await update_review_repo(
+    updated_review = await update_review_repo(
         review_id=uuid4(),
         user_id=None,
         update_data=update_data,
@@ -246,7 +246,7 @@ async def test_update_review_repo_with_missing_id_returns_none(db_session):
     db_session.expunge_all()
     db_review = await db_session.get(Review, review.id)
 
-    assert updated_id is None
+    assert updated_review is None
     assert db_review.product_rating == old_rating
 
 

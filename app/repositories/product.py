@@ -120,9 +120,11 @@ async def update_product_average_rating_repo(
                 / case((new_total_count == 0, 1), else_=new_total_count),
             },
         )
+        .returning(ProductAverageRating)
     )
 
-    await session.execute(stmt)
+    result = await session.execute(stmt)
+    return result.scalar_one()
 
 
 async def update_products_stock_repo(

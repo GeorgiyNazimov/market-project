@@ -35,3 +35,5 @@ class ReviewDataList(BaseModel):
 class ReviewUpdateData(BaseModel):
     text: str | None = None
     product_rating: int | None = None
+
+    model_config = ConfigDict(from_attributes=True)
