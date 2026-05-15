@@ -95,28 +95,28 @@ async def update_cart_item_quantity_repo(
         update(CartItem)
         .where(CartItem.id == update_cart_item_data.cart_item_id)
         .values(quantity=update_cart_item_data.new_quantity)
-        .returning(CartItem.id)
+        .returning(CartItem)
     )
 
     if user_id:
         allowed_cart_ids = select(Cart.id).where(Cart.user_id == user_id)
         stmt = stmt.where(CartItem.cart_id.in_(allowed_cart_ids))
 
-    updated_cart_item_id = (await session.execute(stmt)).scalar_one_or_none()
-    return updated_cart_item_id
+    updated_cart_item = (await session.execute(stmt)).scalar_one_or_none()
+    return updated_cart_item
 
 
 async def delete_cart_item_repo(
     cart_item_id: UUID, user_id: UUID | None, session: AsyncSession
 ):
-    stmt = delete(CartItem).where(CartItem.id == cart_item_id).returning(CartItem.id)
+    stmt = delete(CartItem).where(CartItem.id == cart_item_id).returning(CartItem)
 
     if user_id:
         allowed_cart_ids = select(Cart.id).where(Cart.user_id == user_id)
         stmt = stmt.where(CartItem.cart_id.in_(allowed_cart_ids))
 
-    deleted_item_id = (await session.execute(stmt)).scalar_one_or_none()
-    return deleted_item_id
+    deleted_item = (await session.execute(stmt)).scalar_one_or_none()
+    return deleted_item
 
 
 async def delete_cart_repo(user_id: UUID, session: AsyncSession):
