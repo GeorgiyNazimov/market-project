@@ -1,3 +1,4 @@
+import logging
 from uuid import UUID
 
 from sqlalchemy.exc import IntegrityError
@@ -24,8 +25,10 @@ from app.repositories.orders import (
     update_order_total_price_repo,
 )
 from app.repositories.product import update_products_stock_repo
-from app.schemas.user import UserTokenData
 from app.schemas.orders import OrderCreate, OrderListRead, OrderRead
+from app.schemas.user import UserTokenData
+
+logger = logging.getLogger("service.order")
 
 
 async def get_orders_by_user_id_serv(
@@ -40,7 +43,7 @@ async def get_orders_by_user_id_serv(
     )
 
 
-def _validate_product_stock(items_to_check: list[dict]):
+def _validate_product_stock(items_to_check: dict):
     errors = []
     for p_id, data in items_to_check.items():
         if data["available"] < data["requested"]:
@@ -58,7 +61,9 @@ def _validate_product_stock(items_to_check: list[dict]):
 
 
 async def create_order_serv(
-    new_order_data: OrderCreate, token_data: UserTokenData, session: AsyncSession
+    new_order_data: OrderCreate,
+    token_data: UserTokenData,
+    session: AsyncSession,
 ):
     if len(new_order_data.cart_item_ids) == 0:
         raise ForbiddenError("You must choose cart items")
@@ -116,17 +121,23 @@ async def create_order_serv(
         new_order = await get_order_by_id_repo(new_order.id, owner_id, session)
 
         await session.commit()
+
+        logger.info(
+            "order_create_success",
+            extra={
+                "order_id": new_order.id,
+                "total_price": total_price,
+                "items_count": len(order_items),
+                "product_ids": [str(item.product_id) for item in order_items],
+            },
+        )
+        return OrderRead.model_validate(new_order)
     except IntegrityError as e:
         await session.rollback()
         raise BadRequest("Order data has changed. Please refresh your cart") from e
-    except Exception as e:
+    except Exception:
         await session.rollback()
-
-        if isinstance(e, AppException):
-            raise e
-
-        raise AppException("An unexpected system error occurred") from e
-    return OrderRead.model_validate(new_order)
+        raise
 
 
 async def delete_order_serv(
@@ -152,10 +163,12 @@ async def delete_order_serv(
             raise ConflictError("Order already deleted")
 
         await session.commit()
-    except Exception as e:
+
+        logger.info(
+            "order_delete_success",
+            extra={"order_id": order_id, "is_admin": token_data.role == "admin"},
+        )
+        return success_id
+    except Exception:
         await session.rollback()
-
-        if isinstance(e, AppException):
-            raise e
-
-        raise AppException("An unexpected system error occurred")
+        raise

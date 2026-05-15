@@ -4,6 +4,7 @@ from fastapi import APIRouter, Depends
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.api.dependencies import RoleChecker, get_session
+from app.core.routing import LoggingRoute
 from app.schemas.orders import OrderCreate, OrderListRead, OrderRead
 from app.schemas.user import UserTokenData
 from app.services.orders import (
@@ -12,7 +13,7 @@ from app.services.orders import (
     get_orders_by_user_id_serv,
 )
 
-app = APIRouter(prefix="/order", tags=["Order"])
+app = APIRouter(prefix="/order", tags=["Order"], route_class=LoggingRoute)
 
 
 @app.get("/")
