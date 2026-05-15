@@ -3,6 +3,7 @@ from fastapi.security import OAuth2PasswordRequestForm
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.api.dependencies import get_session, get_token_data
+from app.core.routing import LoggingRoute
 from app.schemas.user import Token, UserCreateData, UserGetData, UserTokenData
 from app.services.user import (
     create_user_serv,
@@ -10,7 +11,7 @@ from app.services.user import (
     login_serv,
 )
 
-app = APIRouter(prefix="/users", tags=["Users"])
+app = APIRouter(prefix="/users", tags=["Users"], route_class=LoggingRoute)
 
 
 @app.post("/token")

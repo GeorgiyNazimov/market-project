@@ -1,3 +1,4 @@
+import logging
 from datetime import datetime, timedelta, timezone
 
 from fastapi.security import OAuth2PasswordRequestForm
@@ -16,7 +17,7 @@ from app.repositories.user import (
 )
 from app.schemas.user import Token, UserCreateData, UserGetData, UserTokenData
 
-# Контекст для хеширования паролей
+logger = logging.getLogger("service.auth")
 pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
 
 
@@ -38,6 +39,7 @@ async def login_serv(
     if not verify_password(auth_data.password, user.password_hash):
         raise AuthenticationError("Invalid credential")
 
+    logger.info("login_success", extra={"user_id": user.id})
     access_token_expires = timedelta(minutes=settings.ACCESS_TOKEN_EXPIRE_MINUTES)
     access_token = create_access_token(
         data={"sub": str(user.id), "role": user.role},
@@ -58,6 +60,13 @@ async def create_user_serv(user_data: UserCreateData, session: AsyncSession) -> 
         user_data.password = get_password_hash(user_data.password)
         new_user = await create_user_repo(user_data, session)
         await session.commit()
+        logger.info(
+            "user_create_success",
+            extra={
+                "user_id": new_user.id,
+                "role": new_user.role,
+            },
+        )
     except IntegrityError as e:
         await session.rollback()
         raise ConflictError("User already exists") from e
@@ -69,5 +78,6 @@ async def get_user_data_serv(
 ) -> UserGetData:
     user = await get_user_by_id_repo(token_data.id, session)
     if not user:
+        logger.error("user_not_found_with_valid_token")
         raise NotFoundError("User not found")
     return UserGetData.model_validate(user)
