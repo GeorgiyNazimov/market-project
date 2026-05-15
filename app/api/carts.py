@@ -4,6 +4,7 @@ from fastapi import APIRouter, Depends
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.api.dependencies import RoleChecker, get_session
+from app.core.routing import LoggingRoute
 from app.schemas.cart import CartItemList, NewCartItemData, UpdateCartItemData
 from app.schemas.user import UserTokenData
 from app.services.cart import (
@@ -14,7 +15,7 @@ from app.services.cart import (
     update_cart_item_quantity_serv,
 )
 
-app = APIRouter(prefix="/carts", tags=["Carts"])
+app = APIRouter(prefix="/carts", tags=["Carts"], route_class=LoggingRoute)
 
 
 @app.get("/")

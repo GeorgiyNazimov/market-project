@@ -66,3 +66,5 @@ class ProductUpdateData(BaseModel):
     description: str | None = None
     price: Decimal | None = None
     stock: int | None = None
+
+    model_config = ConfigDict(from_attributes=True)

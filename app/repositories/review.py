@@ -58,7 +58,7 @@ async def update_review_repo(
         update(Review)
         .where(Review.id == review_id)
         .values(**update_data)
-        .returning(Review.id)
+        .returning(Review)
     )
 
     if user_id is not None:

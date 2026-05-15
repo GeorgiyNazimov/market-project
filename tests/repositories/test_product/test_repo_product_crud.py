@@ -92,10 +92,10 @@ async def test_update_product_repo_success(db_session):
     await db_session.flush()
 
     update_data = update_data.model_dump(exclude_unset=True)
-    updated_id = await update_product_repo(product.id, update_data, db_session)
+    updated_product = await update_product_repo(product.id, update_data, db_session)
 
     await db_session.refresh(product)
-    assert product.id == updated_id
+    assert product.id == updated_product.id
     assert product.name == update_data["name"]
     assert product.price == update_data["price"]
 
@@ -108,11 +108,11 @@ async def test_update_product_repo_missing_product_id_returns_none(db_session):
     await db_session.flush()
 
     update_data = update_data.model_dump(exclude_unset=True)
-    updated_id = await update_product_repo(
+    updated_product = await update_product_repo(
         product_id=uuid4(), update_data=update_data, session=db_session
     )
 
-    assert updated_id is None
+    assert updated_product is None
 
 
 @pytest.mark.asyncio

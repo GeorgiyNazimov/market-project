@@ -58,8 +58,8 @@ async def test_delete_cart_item_success(db_session):
     db_session.add_all([user, cart, cart_item])
     await db_session.flush()
 
-    deleted_item_id = await delete_cart_item_repo(cart_item.id, user.id, db_session)
-    assert deleted_item_id == cart_item.id
+    deleted_cart_item = await delete_cart_item_repo(cart_item.id, user.id, db_session)
+    assert deleted_cart_item.id == cart_item.id
 
     db_cart_item = (await db_session.execute(select(CartItem))).scalar_one_or_none()
     assert db_cart_item is None
@@ -72,10 +72,10 @@ async def test_delete_cart_item_other_user_returns_none(db_session):
     db_session.add_all([my_user, other_cart_item])
     await db_session.flush()
 
-    deleted_item_id = await delete_cart_item_repo(
+    deleted_cart_item = await delete_cart_item_repo(
         other_cart_item.id, my_user.id, db_session
     )
-    assert deleted_item_id is None
+    assert deleted_cart_item is None
 
     db_cart_item = (await db_session.execute(select(CartItem))).scalar_one()
     assert db_cart_item == other_cart_item
@@ -196,12 +196,12 @@ async def test_update_cart_item_quantity_success(db_session):
     db_session.add_all([user, cart, cart_item])
     await db_session.flush()
 
-    updated_item_id = await update_cart_item_quantity_repo(
+    updated_cart_item = await update_cart_item_quantity_repo(
         update_cart_item_data, user.id, db_session
     )
 
     db_cart_item = (await db_session.execute(select(CartItem))).scalar_one_or_none()
-    assert updated_item_id == cart_item.id
+    assert updated_cart_item.id == cart_item.id
     assert db_cart_item.quantity == update_cart_item_data.new_quantity
 
 
@@ -216,10 +216,10 @@ async def test_update_cart_item_quantity_other_user_empty_result(db_session):
     db_session.add_all([my_user, other_cart_item])
     await db_session.flush()
 
-    updated_item_id = await update_cart_item_quantity_repo(
+    updated_cart_item = await update_cart_item_quantity_repo(
         update_cart_item_data, my_user.id, db_session
     )
 
     db_cart_item = (await db_session.execute(select(CartItem))).scalar_one_or_none()
-    assert updated_item_id is None
+    assert updated_cart_item is None
     assert db_cart_item.quantity == other_cart_item.quantity

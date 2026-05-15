@@ -6,6 +6,7 @@ from jose import ExpiredSignatureError, JWTError, jwt
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.config.default import get_settings
+from app.core.context import reset_user_id, set_user_id
 from app.core.exceptions import AuthenticationError, ForbiddenError
 from app.database.connection.session import _async_session_maker
 from app.schemas.user import UserTokenData
@@ -22,17 +23,24 @@ async def get_session() -> AsyncGenerator[AsyncSession, None]:
         yield session
 
 
-async def get_token_data(token: str = Security(oauth2_scheme)) -> UserTokenData:
+async def get_token_data(token: str = Security(oauth2_scheme)):
+    tkn = None
     try:
         payload = jwt.decode(
             token, settings.SECRET_KEY, algorithms=[settings.ALGORITHM]
         )
+        token_data = UserTokenData.model_validate(payload)
+
+        tkn = set_user_id(token_data.id)
+        yield token_data
+
     except ExpiredSignatureError as e:
         raise AuthenticationError("Expired token") from e
     except JWTError as e:
         raise AuthenticationError("Invalid credential") from e
-    token_data = UserTokenData.model_validate(payload)
-    return token_data
+    finally:
+        if tkn is not None:
+            reset_user_id(tkn)
 
 
 class RoleChecker:

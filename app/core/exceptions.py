@@ -2,10 +2,11 @@ class AppException(Exception):
     status_code = 500
     error_code = "app_error"
 
-    def __init__(self, message=None, payload=None, headers=None):
+    def __init__(self, message=None, payload=None, headers=None, log_it=False):
         self.message = message or "Application error"
         self.payload = payload
         self.headers = headers
+        self.log_it = log_it
         super().__init__(self.message)
 
 

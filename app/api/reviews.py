@@ -4,12 +4,13 @@ from fastapi import APIRouter, Depends
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.api.dependencies import RoleChecker, get_session
+from app.core.routing import LoggingRoute
 from app.schemas.base import IdResponse
 from app.schemas.review import ReviewUpdateData
 from app.schemas.user import UserTokenData
 from app.services.review import delete_review_serv, update_review_serv
 
-app = APIRouter(prefix="/reviews", tags=["Reviews"])
+app = APIRouter(prefix="/reviews", tags=["Reviews"], route_class=LoggingRoute)
 
 
 @app.patch("/{review_id}")

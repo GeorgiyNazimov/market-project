@@ -4,6 +4,7 @@ from fastapi import APIRouter, Depends
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.api.dependencies import RoleChecker, get_session
+from app.core.routing import LoggingRoute
 from app.schemas.base import IdResponse, PaginationParams
 from app.schemas.product import (
     NewProductData,
@@ -22,7 +23,7 @@ from app.services.product import (
 )
 from app.services.review import create_review_serv, get_review_list_serv
 
-app = APIRouter(prefix="/products", tags=["Products"])
+app = APIRouter(prefix="/products", tags=["Products"], route_class=LoggingRoute)
 
 
 @app.get("/")

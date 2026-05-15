@@ -1,3 +1,4 @@
+import logging
 from datetime import datetime
 from uuid import UUID
 
@@ -21,7 +22,10 @@ from app.schemas.product import (
     ShortProductData,
     ShortProductDataList,
 )
+from app.utils.logging import get_schema_diff
 from app.utils.pagination import decode_cursor, encode_cursor
+
+logger = logging.getLogger("service.product")
 
 PRODUCT_SORT_CONFIG = {
     "created_at": (Product.created_at, datetime.fromisoformat, lambda p: p.created_at),
@@ -62,7 +66,6 @@ async def get_product_list_serv(
 
 async def create_product_serv(product_data: NewProductData, session: AsyncSession):
     product_data.name = product_data.name.strip()
-
     exists = await get_product_by_name_repo(product_data.name, session)
     if exists:
         raise ConflictError("Product with this name already exists")
@@ -70,6 +73,16 @@ async def create_product_serv(product_data: NewProductData, session: AsyncSessio
     new_product = Product(**product_data.model_dump())
     await create_product_repo(new_product, session)
     await session.commit()
+
+    logger.info(
+        "product_create_success",
+        extra={
+            "product_id": new_product.id,
+            "product_name": new_product.name,
+            "price": new_product.price,
+            "stock": new_product.stock,
+        },
+    )
     return new_product.id
 
 
@@ -83,32 +96,53 @@ async def get_product_serv(product_id: UUID, session: AsyncSession) -> ProductDa
 async def update_product_serv(
     product_id: UUID, product_update_data: ProductUpdateData, session: AsyncSession
 ):
-    update_data = product_update_data.model_dump(exclude_unset=True)
+    product = await get_product_repo(product_id, session)
+    if not product:
+        raise NotFoundError("Product not found")
 
+    old_snapshot = ProductUpdateData.model_validate(product)
+
+    update_data = product_update_data.model_dump(exclude_unset=True)
     if not update_data:
         raise BadRequest("No data provided for update")
 
     if "name" in update_data:
         update_data["name"] = update_data["name"].strip()
-        if await get_product_by_name_repo(update_data["name"], session):
+        duplicate = await get_product_by_name_repo(update_data["name"], session)
+        if duplicate and duplicate.id != product_id:
             raise ConflictError(f"Product '{update_data['name']}' already exists")
 
-    updated_id = await update_product_repo(product_id, update_data, session)
+    try:
+        updated_product = await update_product_repo(product_id, update_data, session)
+        if not updated_product:
+            await session.rollback()
+            raise NotFoundError("Product not found")
 
-    if not updated_id:
+        new_snapshot = ProductUpdateData.model_validate(updated_product)
+
+        changes = get_schema_diff(old_snapshot, new_snapshot)
+        await session.commit()
+
+        logger.info(
+            "product_update_success", extra={"product_id": product_id, "diff": changes}
+        )
+        return updated_product.id
+    except Exception:
         await session.rollback()
-        raise NotFoundError("Product not found")
-
-    await session.commit()
-    return updated_id
+        raise
 
 
 async def delete_product_serv(product_id: UUID, session: AsyncSession):
-    deleted_id = await delete_product_repo(product_id, session)
+    try:
+        deleted_id = await delete_product_repo(product_id, session)
+        if deleted_id is None:
+            await session.rollback()
+            raise NotFoundError("Product not found")
 
-    if deleted_id is None:
+        await session.commit()
+
+        logger.info("product_delete_success", extra={"product_id": product_id})
+        return deleted_id
+    except Exception:
         await session.rollback()
-        raise NotFoundError("Product not found")
-
-    await session.commit()
-    return deleted_id
+        raise

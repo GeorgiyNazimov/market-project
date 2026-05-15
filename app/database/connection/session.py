@@ -5,7 +5,6 @@ from app.config import Settings, get_settings
 
 
 def get_engine(settings: Settings):
-    print("create async engine")
     return create_async_engine(
         settings.database_uri,
         echo=False,
@@ -16,7 +15,6 @@ def get_engine(settings: Settings):
 
 
 def get_async_session_maker(engine) -> sessionmaker:
-    print("create async sessionmaker")
     return sessionmaker(engine, class_=AsyncSession, expire_on_commit=False)
 
 

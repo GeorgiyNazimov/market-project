@@ -1,3 +1,4 @@
+import logging
 from datetime import datetime
 
 from sqlalchemy import UUID
@@ -5,6 +6,7 @@ from sqlalchemy.exc import IntegrityError
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.exceptions import BadRequest, ConflictError, NotFoundError
+from app.database.models.product_avg_rating import ProductAverageRating
 from app.database.models.review import Review
 from app.repositories.product import update_product_average_rating_repo
 from app.repositories.review import (
@@ -23,11 +25,28 @@ from app.schemas.review import (
     ReviewUpdateData,
 )
 from app.schemas.user import UserTokenData
+from app.utils.logging import get_schema_diff
 from app.utils.pagination import decode_cursor, encode_cursor
 
+logger = logging.getLogger("service.review")
 REVIEW_SORT_CONFIG = {
     "created_at": (Review.created_at, datetime.fromisoformat, lambda r: r.created_at),
 }
+
+
+def get_product_rating_log_data(product_rating: ProductAverageRating) -> dict:
+    if not product_rating:
+        return {}
+    return {
+        "product_rating_snapshot": {
+            "avg": product_rating.avg_rating,
+            "total": product_rating.rating_count,
+            "details": {
+                str(i): getattr(product_rating, f"rating_{i}_count")
+                for i in range(1, 6)
+            },
+        }
+    }
 
 
 async def create_review_serv(
@@ -53,8 +72,20 @@ async def create_review_serv(
         await session.flush()
 
         rating = review_data.product_rating
-        await update_product_average_rating_repo(product_id, rating, None, session)
+        updated_product_rating = await update_product_average_rating_repo(
+            product_id, rating, None, session
+        )
+        product_rating_snapshot = get_product_rating_log_data(updated_product_rating)
         await session.commit()
+        logger.info(
+            "review_create_success",
+            extra={
+                "product_id": product_id,
+                "review_id": new_review.id,
+                "user_rating": new_review.product_rating,
+                **product_rating_snapshot,
+            },
+        )
         return new_review
     except IntegrityError as e:
         await session.rollback()
@@ -63,6 +94,10 @@ async def create_review_serv(
             raise NotFoundError("Product not found") from e
         if sqlstate == "23505":  # unique violation
             raise ConflictError("You already wrote review for this product") from e
+        raise
+
+    except Exception as e:
+        await session.rollback()
         raise
 
 
@@ -102,9 +137,11 @@ async def update_review_serv(
     token_data: UserTokenData,
     session: AsyncSession,
 ):
-    review = await get_review_by_id_repo(review_id, session)
-    if review is None:
+    old_review = await get_review_by_id_repo(review_id, session)
+    if old_review is None:
         raise NotFoundError("Review not found")
+
+    old_snapshot = ReviewUpdateData.model_validate(old_review)
 
     owner_id = None if token_data.role == "admin" else token_data.id
 
@@ -112,24 +149,46 @@ async def update_review_serv(
     if not update_data:
         raise BadRequest("No data provided for update")
 
-    new_rating = update_data.get("product_rating")
-    old_rating = review.product_rating
-    if new_rating is not None and old_rating != new_rating:
-        await update_product_average_rating_repo(
-            product_id=review.product_id,
-            new_rating=new_rating,
-            old_rating=old_rating,
-            session=session,
+    try:
+        product_rating_snapshot = {}
+        new_rating = update_data.get("product_rating")
+        old_rating = old_review.product_rating
+        if new_rating is not None and old_rating != new_rating:
+            updated_product_rating = await update_product_average_rating_repo(
+                product_id=old_review.product_id,
+                new_rating=new_rating,
+                old_rating=old_rating,
+                session=session,
+            )
+            product_rating_snapshot = get_product_rating_log_data(
+                updated_product_rating
+            )
+
+        updated_review = await update_review_repo(
+            review_id, owner_id, update_data, session
         )
+        if updated_review is None:
+            await session.rollback()
+            raise NotFoundError("Review not found")
 
-    updated_id = await update_review_repo(review_id, owner_id, update_data, session)
+        new_snapshot = ReviewUpdateData.model_validate(updated_review)
 
-    if updated_id is None:
+        changes = get_schema_diff(old_snapshot, new_snapshot)
+
+        await session.commit()
+        logger.info(
+            "review_update_success",
+            extra={
+                "is_admin": token_data.role == "admin",
+                "review_id": review_id,
+                "diff": changes,
+                **product_rating_snapshot,
+            },
+        )
+        return updated_review.id
+    except Exception:
         await session.rollback()
-        raise NotFoundError("Review not found")
-
-    await session.commit()
-    return updated_id
+        raise
 
 
 async def delete_review_serv(
@@ -141,18 +200,32 @@ async def delete_review_serv(
 
     owner_id = None if token_data.role == "admin" else token_data.id
 
-    deleted_id = await delete_review_repo(review_id, owner_id, session)
-    if deleted_id is None:
+    try:
+        deleted_id = await delete_review_repo(review_id, owner_id, session)
+        if deleted_id is None:
+            await session.rollback()
+            raise NotFoundError("Review not found")
+
+        old_rating = review.product_rating
+        updated_product_rating = await update_product_average_rating_repo(
+            product_id=review.product_id,
+            new_rating=None,
+            old_rating=old_rating,
+            session=session,
+        )
+        product_rating_snapshot = get_product_rating_log_data(updated_product_rating)
+
+        await session.commit()
+        logger.info(
+            "review_delete_success",
+            extra={
+                "is_admin": token_data.role == "admin",
+                "review_id": review_id,
+                "product_id": review.product_id,
+                **product_rating_snapshot,
+            },
+        )
+        return deleted_id
+    except Exception:
         await session.rollback()
-        raise NotFoundError("Review not found")
-
-    old_rating = review.product_rating
-    await update_product_average_rating_repo(
-        product_id=review.product_id,
-        new_rating=None,
-        old_rating=old_rating,
-        session=session,
-    )
-
-    await session.commit()
-    return deleted_id
+        raise
