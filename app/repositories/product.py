@@ -55,7 +55,7 @@ async def update_product_repo(
         update(Product)
         .where(Product.id == product_id)
         .values(**update_data)
-        .returning(Product.id)
+        .returning(Product)
     )
     result = await session.execute(stmt)
     return result.scalar_one_or_none()
