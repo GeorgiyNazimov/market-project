@@ -11,7 +11,6 @@ from app.database import Base
 
 class Product(Base):
     __tablename__ = "products"
-    __table_args__ = (Index(None, "name"),)
 
     id: Mapped[uuid.UUID] = mapped_column(
         UUID(as_uuid=True), primary_key=True, default=uuid.uuid4
@@ -28,4 +27,13 @@ class Product(Base):
     category: Mapped[Optional["Category"]] = relationship(back_populates="products")
     product_rating: Mapped[Optional["ProductAverageRating"]] = relationship(
         "ProductAverageRating", uselist=False, lazy="raise"
+    )
+
+    __table_args__ = (
+        Index(None, "name"),
+        Index(
+            None, 
+            created_at.desc().nullslast(), 
+            id.desc(),
+        ),
     )
