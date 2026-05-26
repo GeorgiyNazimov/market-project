@@ -10,6 +10,9 @@ class Settings(BaseSettings):
     POSTGRES_PORT: int
     POSTGRES_PASSWORD: str
 
+    REDIS_CACHE_URL: str
+    REDIS_STATE_URL: str
+    
     BACKEND_HOST: str
     BACKEND_PORT: int
     PATH_PREFIX: str
