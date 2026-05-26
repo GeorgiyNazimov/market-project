@@ -1,9 +1,10 @@
 import logging
 from redis.asyncio import Redis, ConnectionPool
-from app.api.dependencies import settings
+from app.config.default import get_settings
 
 logger = logging.getLogger("api.infra")
 
+settings = get_settings()
 class RedisInfra:
     def __init__(self):
         self.cache_pool: ConnectionPool | None = None
