@@ -3,11 +3,13 @@ from typing import AsyncGenerator
 from fastapi import Depends, Security
 from fastapi.security import OAuth2PasswordBearer
 from jose import ExpiredSignatureError, JWTError, jwt
+from redis.asyncio import Redis
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.config.default import get_settings
 from app.core.context import reset_user_id, set_user_id
 from app.core.exceptions import AuthenticationError, ForbiddenError
+from app.core.redis import redis_infra
 from app.database.connection.session import _async_session_maker
 from app.schemas.user import UserTokenData
 
@@ -51,3 +53,14 @@ class RoleChecker:
         if token.role not in self.allowed_roles:
             raise ForbiddenError("Not enough permissions")
         return token
+
+
+async def get_cache_redis() -> Redis:
+    if redis_infra.cache_client is None:
+        raise RuntimeError("Redis Cache client is not initialized")
+    return redis_infra.cache_client
+
+async def get_state_redis() -> Redis:
+    if redis_infra.state_client is None:
+        raise RuntimeError("Redis State client is not initialized")
+    return redis_infra.state_client

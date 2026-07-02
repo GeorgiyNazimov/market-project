@@ -61,6 +61,42 @@ services:
       - "auto_explain.log_buffers=true"
       - "-c"
       - "auto_explain.log_nested_statements=on"
+  
+
+  redis_cache:
+    image: redis:7.4-alpine
+    container_name: shop_redis_cache
+    ports:
+      - "6379:6379"
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    command: >
+      redis-server 
+      --maxmemory 512mb 
+      --maxmemory-policy allkeys-lru
+      --appendonly no
+
+  redis_state:
+    image: redis:7.4-alpine
+    container_name: shop_redis_state
+    ports:
+      - "6380:6379"
+    volumes:
+      - shop_redis_state_data:/data
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    command: >
+      redis-server 
+      --maxmemory 1gb 
+      --maxmemory-policy noeviction
+      --appendonly yes
+      --appendfsync everysec
 
 
   locust:
@@ -80,3 +116,4 @@ services:
 
 volumes:
   pgdata:
+  shop_redis_state_data:

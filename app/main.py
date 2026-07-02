@@ -1,3 +1,4 @@
+from contextlib import asynccontextmanager
 from fastapi import FastAPI
 from sqladmin import Admin
 from uvicorn import run
@@ -8,6 +9,7 @@ from app.api import list_of_routers
 from app.config import Settings, get_settings
 from app.core.exception_handler import register_exception_handlers
 from app.core.logger_settings import setup_logging
+from app.core.redis import redis_infra
 from app.core.routing import LoggingRoute
 from app.database.connection.session import _engine
 from app.middleware.request_id import request_id_middleware
@@ -24,6 +26,15 @@ def add_views(admin: Admin, admin_views):
         admin.add_view(view)
 
 
+@asynccontextmanager
+async def lifespan(application: FastAPI):
+    redis_infra.init_pools()
+    
+    yield
+    
+    await redis_infra.close_pools()
+
+
 def get_app() -> FastAPI:
     description = ""
 
@@ -35,6 +46,7 @@ def get_app() -> FastAPI:
         version="1.0.0",
         title="MarketProject",
         description=description,
+        lifespan=lifespan,
     )
     application.middleware("http")(request_id_middleware)
 
